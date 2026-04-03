@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.4.4] - 2026-04-03
+
+### Fixed
+
+- **Setup wizard step 2 (data location):** Choosing “Default location” removed `.openclaw-volume-root` and left `OPENCLAW_VOLUME_ROOT` empty on purpose, but the main menu only treated step 2 as complete when that variable was set—so the line showed `⚪ Not set` after a valid choice. The wizard now writes the sentinel `default` into `.openclaw-volume-root`, tracks `OPENCLAW_VOLUME_MODE` (`unset` / `default` / `mount`), shows `✅ Default (/var/lib/openclaw, /etc/openclaw)` when appropriate, and clarifies the step-2 “Current” label. `step_env` behaviour is unchanged (custom volume root still required for symlink layout).
+
+[0.4.4]: https://github.com/mere/op-and-chloe/compare/v0.4.3...v0.4.4
+
 ## [0.4.3] - 2026-02-23
 
 ### Added

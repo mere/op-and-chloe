@@ -5,8 +5,18 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 STACK_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
 # Persistent volume root (e.g. /mnt/volume-hel1-2); set by setup step 1 or .openclaw-volume-root
 VOLUME_ROOT_FILE="$STACK_DIR/.openclaw-volume-root"
-if [ -f "$VOLUME_ROOT_FILE" ] && [ -s "$VOLUME_ROOT_FILE" ]; then
-  OPENCLAW_VOLUME_ROOT=$(cat "$VOLUME_ROOT_FILE" | sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' | head -1)
+# unset = step 2 never completed; default = explicit host paths; mount = OPENCLAW_VOLUME_ROOT is the persistent disk root
+OPENCLAW_VOLUME_ROOT=""
+OPENCLAW_VOLUME_MODE="unset"
+if [ -f "$VOLUME_ROOT_FILE" ]; then
+  _vol_line=$(cat "$VOLUME_ROOT_FILE" 2>/dev/null | sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' | head -1)
+  if [ "$_vol_line" = "default" ]; then
+    OPENCLAW_VOLUME_MODE="default"
+  elif [ -n "$_vol_line" ]; then
+    OPENCLAW_VOLUME_ROOT="$_vol_line"
+    OPENCLAW_VOLUME_MODE="mount"
+  fi
+  unset _vol_line
 fi
 ENV_FILE=${ENV_FILE:-/etc/openclaw/stack.env}
 # Load INSTANCE from env file so we check the same container names as docker compose
@@ -69,7 +79,11 @@ resolve_container_name(){
 step_status(){
   case "$1" in
     1) command -v apt-get >/dev/null 2>&1 && [ -f /etc/os-release ] && echo "✅ Ready" || echo "⚪ Not ready" ;;
-    2) if [ -n "${OPENCLAW_VOLUME_ROOT:-}" ]; then echo "✅ ${OPENCLAW_VOLUME_ROOT}"; else echo "⚪ Not set"; fi ;;
+    2) case "${OPENCLAW_VOLUME_MODE:-unset}" in
+         mount) echo "✅ ${OPENCLAW_VOLUME_ROOT}" ;;
+         default) echo "✅ Default (/var/lib/openclaw, /etc/openclaw)" ;;
+         *) echo "⚪ Not set" ;;
+       esac ;;
     3) command -v docker >/dev/null 2>&1 && echo "✅ Installed" || echo "⚪ Not installed" ;;
     4) [ -f "$ENV_FILE" ] && echo "✅ Created" || echo "⚪ Not created" ;;
     5) check_done browser_init && echo "✅ CDP scripts installed" || echo "⚪ Not installed" ;;
@@ -721,7 +735,13 @@ step_volume_root(){
   fi
   options+=("Default location (no volume): /var/lib/openclaw and /etc/openclaw")
   paths+=("default")
-  echo "  Current: ${OPENCLAW_VOLUME_ROOT:-<default>}"
+  if [ -n "${OPENCLAW_VOLUME_ROOT:-}" ]; then
+    echo "  Current: $OPENCLAW_VOLUME_ROOT"
+  elif [ "${OPENCLAW_VOLUME_MODE:-unset}" = "default" ]; then
+    echo "  Current: /var/lib/openclaw and /etc/openclaw (default, no volume)"
+  else
+    echo "  Current: <not chosen yet>"
+  fi
   echo
   local i=0
   while [ "$i" -lt "${#options[@]}" ]; do
@@ -740,13 +760,15 @@ step_volume_root(){
   fi
   local chosen_path="${paths[$pick]}"
   if [ "$chosen_path" = "default" ]; then
-    rm -f "$VOLUME_ROOT_FILE"
+    printf '%s\n' "default" > "$VOLUME_ROOT_FILE"
     unset OPENCLAW_VOLUME_ROOT
+    OPENCLAW_VOLUME_MODE="default"
     ok "Using default location: /var/lib/openclaw and /etc/openclaw (no persistent volume)"
     return 0
   fi
   echo "$chosen_path" > "$VOLUME_ROOT_FILE"
   OPENCLAW_VOLUME_ROOT=$chosen_path
+  OPENCLAW_VOLUME_MODE="mount"
   ok "OpenClaw data will use: $OPENCLAW_VOLUME_ROOT"
   say "Run step 3 (docker) next to install Docker and Compose."
 }
