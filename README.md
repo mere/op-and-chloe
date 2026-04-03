@@ -98,6 +98,8 @@ This is your day-to-day instance. Create all agents here. You get Bitwarden, ema
 
 When things break or you need restarts or big changes, talk to Op (admin with SSH access). Talk to Chloe for daily work.
 
+**Bun (optional):** Chloe’s worker image ships with [Bun](https://bun.sh) on `PATH`. The stack does not require it for normal use. It is there so you can install and run **Bun-only** tooling when you want—for example advanced agent memory via **QMD**, or anything else that expects `bun` / `bunx`.
+
 ---
 <p align="center">
   <img src="assets/op.png" alt="OpenClaw Setup Wizard" height="200">

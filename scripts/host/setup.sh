@@ -976,17 +976,23 @@ step_configure_guard(){
   say "Run configure guard"
   say "Op is your admin instance — connect a model and Telegram bot so you can talk to Op for fixing Chloe, restarts, and admin."
   echo
-  sep
-  echo "Tips for guard onboarding:"
-  echo "  1. Select QuickStart."
-  echo "  2. If you already pay for ChatGPT, we recommend: OpenAI (Codex OAuth + API key)"
-  echo "  3. Select: OpenAI Codex (ChatGPT OAuth)"
-  echo "  4. After you log in to OpenAI, you may see a \"This site can't be reached\" page — that's expected. Simply copy the URL from the browser and paste it into the terminal when asked."
-  echo "  5. Default Model: Keep current"
-  echo "  6. Select channel: we recommend Telegram (Bot API). Install Telegram on your phone if you don't have it yet."
-  echo "  7. Follow the instructions and paste back the Telegram token."
-  echo
-  echo "Suggested bot name: ${pretty}-guard-bot"
+  echo "┌────────────────────────────────────────────────────────┐"
+  echo "│ 📋 Guard (Op) onboarding — follow in order:             │"
+  echo "│                                                        │"
+  echo "│   1. Select QuickStart.                               │"
+  echo "│   2. If you already pay for ChatGPT, choose OpenAI     │"
+  echo "│      (Codex OAuth + API key).                         │"
+  echo "│   3. Select: OpenAI Codex (ChatGPT OAuth).            │"
+  echo "│   4. OpenAI may show \"This site can't be reached\"     │"
+  echo "│      after login — that's OK. Copy the URL from the    │"
+  echo "│      browser and paste it into this terminal.         │"
+  echo "│   5. Default Model: Keep current                      │"
+  echo "│   6. Channel: we recommend Telegram (Bot API).        │"
+  echo "│      Install Telegram on your phone if needed.        │"
+  echo "│   7. Follow prompts and paste your Telegram token.    │"
+  echo "│                                                        │"
+  echo "│   Suggested bot name: ${pretty}-guard-bot             │"
+  echo "└────────────────────────────────────────────────────────┘"
   echo
   echo "┌────────────────────────────────────────────────────────┐"
   echo "│ ⚠️  If the onboard script exits early, run this to     │"
@@ -1015,13 +1021,16 @@ step_configure_worker(){
   say "Run configure worker"
   say "Chloe is your day-to-day instance — connect models and Telegram bot here; create all agents here."
   echo
-  sep
-  echo "Recommended worker setup:"
-  echo "  • Day-to-day instance — create all agents here"
-  echo "  • Connect your primary model(s) and tools here"
-  echo "  • Set up a dedicated Telegram bot for daily chat"
-  echo "  • Suggested bot name: ${pretty}-bot"
-  echo "  • Use ./openclaw-worker ... for worker-only commands"
+  echo "┌────────────────────────────────────────────────────────┐"
+  echo "│ 📋 Worker (Chloe) — recommended setup:                  │"
+  echo "│                                                        │"
+  echo "│   • Day-to-day instance — create all agents here       │"
+  echo "│   • Connect your primary model(s) and tools here      │"
+  echo "│   • Set up a dedicated Telegram bot for daily chat    │"
+  echo "│   • Suggested bot name: ${pretty}-bot                 │"
+  echo "│   • Use ./openclaw-worker ... for worker-only         │"
+  echo "│     commands.                                         │"
+  echo "└────────────────────────────────────────────────────────┘"
   echo
   echo "┌────────────────────────────────────────────────────────┐"
   echo "│ ⚠️  If the onboard script exits early, run this to     │"
@@ -1327,6 +1336,10 @@ step_auth_tokens(){
 
 step_help_useful_commands(){
   say "Help and useful commands"
+  echo
+  echo "┌────────────────────────────────────────────────────────┐"
+  echo "│ 📚 Quick reference — run these from the stack directory │"
+  echo "└────────────────────────────────────────────────────────┘"
   echo
   echo "Roles:"
   echo "  cat /var/lib/openclaw/guard/workspace/ROLE.md"

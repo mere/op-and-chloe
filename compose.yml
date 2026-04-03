@@ -35,7 +35,7 @@ services:
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       NPM_CONFIG_PREFIX: /home/node/.openclaw/npm-global
       PNPM_HOME: /home/node/.local/share/pnpm
-      PATH: /opt/op-and-chloe/scripts/worker:/opt/op-and-chloe/scripts:/home/node/.local/share/pnpm:/home/node/.openclaw/npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      PATH: /opt/op-and-chloe/scripts/worker:/opt/op-and-chloe/scripts:/home/node/.local/share/pnpm:/home/node/.openclaw/npm-global/bin:/usr/local/bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     volumes:
       - ${OPENCLAW_STATE_DIR:-/var/lib/openclaw/chloe/state}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-/var/lib/openclaw/chloe/workspace}:/home/node/.openclaw/workspace

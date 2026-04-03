@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.6
-# Chloe (worker) tools: Himalaya + Python for m365 + Bitwarden CLI (BW runs in worker).
+# Chloe (worker) tools: Bun + Himalaya + Python for m365 + Bitwarden CLI (BW runs in worker).
 ARG OPENCLAW_BASE_IMAGE=ghcr.io/openclaw/openclaw:main
 FROM ${OPENCLAW_BASE_IMAGE}
 
@@ -10,8 +10,13 @@ ARG TARGETARCH
 ARG HIMALAYA_VERSION=v1.1.0
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates curl python3 python3-venv \
+ && apt-get install -y --no-install-recommends ca-certificates curl python3 python3-venv unzip \
  && rm -rf /var/lib/apt/lists/*
+
+# Bun (install to a global path so USER node sees it on PATH)
+ENV BUN_INSTALL=/usr/local/bun
+ENV PATH="${BUN_INSTALL}/bin:${PATH}"
+RUN curl -fsSL https://bun.sh/install | bash
 
 # Himalaya mail CLI (official release artifact)
 RUN case "${TARGETARCH}" in \

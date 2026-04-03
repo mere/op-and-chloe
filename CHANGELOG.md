@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.4.9] - 2026-04-03
+
+### Added
+
+- **Chloe worker image — Bun:** **docker/openclaw-worker-tools.Dockerfile** installs Bun (global install under `/usr/local/bun`); **compose.yml** adds `/usr/local/bun/bin` to the worker `PATH` so the `node` user can run `bun` / `bunx`. **README** documents this as optional: use it for Bun-specific tooling (e.g. advanced memory / **QMD**), not required for the default stack.
+
+### Changed
+
+- **Setup wizard:** Guard (Op) and worker (Chloe) onboarding hints and the “useful commands” help step are shown in bordered callout boxes in **scripts/host/setup.sh**.
+
+[0.4.9]: https://github.com/mere/op-and-chloe/compare/v0.4.8...v0.4.9
+
 ## [0.4.8] - 2026-04-03
 
 ### Changed
