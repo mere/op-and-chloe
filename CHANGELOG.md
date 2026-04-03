@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.4.6] - 2026-04-03
+
+### Changed
+
+- **Setup wizard main menu (TUI):** The right-hand column shows status text only; the leading ✅ / ⚪ / ⚠️ is no longer repeated after `|` (emoji stays beside the step title). **scripts/host/setup.sh** `print_menu_step`.
+
+[0.4.6]: https://github.com/mere/op-and-chloe/compare/v0.4.5...v0.4.6
+
 ## [0.4.5] - 2026-04-03
 
 ### Changed

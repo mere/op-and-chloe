@@ -1377,21 +1377,23 @@ run_step(){
   read -r -p "$TIGER Press Enter to return to menu..." _
 }
 
-# Menu row: emoji next to step number/title so status visually aligns with the line; full status on the right.
+# Menu row: emoji beside title; right column is status text only (no duplicate emoji).
 print_menu_step(){
-  local n="$1" title="$2" full ic
+  local n="$1" title="$2" full ic detail
   full=$(step_status "$n")
   if [ -z "$full" ]; then
     printf "  %2d. %-26s | %s\n" "$n" "$title" ""
     return
   fi
+  detail="$full"
   case "$full" in
-    ✅*) ic="✅" ;;
-    ⚪*) ic="⚪" ;;
-    ⚠️*) ic="⚠️" ;;
+    ✅*) ic="✅"; detail="${full#✅}" ;;
+    ⚪*) ic="⚪"; detail="${full#⚪}" ;;
+    ⚠️*) ic="⚠️"; detail="${full#⚠️}" ;;
     *) ic=" " ;;
   esac
-  printf "  %2d. %s %-22s | %s\n" "$n" "$ic" "$title" "$full"
+  detail="${detail# }"
+  printf "  %2d. %s %-22s | %s\n" "$n" "$ic" "$title" "$detail"
 }
 
 menu_once(){
