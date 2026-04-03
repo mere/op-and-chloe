@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.4.7] - 2026-04-03
+
+### Changed
+
+- **Setup wizard — dashboard pairing (step 11):** Replaced four tiger-prefixed `say` lines with a single bordered `⚠️` callout (“What you need to do now”), matching the onboard hint boxes elsewhere in **scripts/host/setup.sh**. Clarifies opening Guard and Worker links, that a red `` `pairing required` `` (or disconnected 1008) is expected, then choosing **Approve all pending**, with token mismatch pointing at rotate keys (menu option 1).
+
+[0.4.7]: https://github.com/mere/op-and-chloe/compare/v0.4.6...v0.4.7
+
 ## [0.4.6] - 2026-04-03
 
 ### Changed

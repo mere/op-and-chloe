@@ -1195,10 +1195,18 @@ step_auth_tokens(){
     fi
     if [ "${guard_paired:-0}" -eq 0 ] 2>/dev/null || [ "${worker_paired:-0}" -eq 0 ] 2>/dev/null; then
       echo
-      say "Let's set up your dashboards!"
-      say "First, open the Guard and Worker dashboards using the links above."
-      say "If you see Token mismatch, rotate the keys."
-      say "If you see disconnected (1008): pairing required — approve the pairing using the options below."
+      echo "┌────────────────────────────────────────────────────────┐"
+      echo "│ ⚠️  What you need to do now:                            │"
+      echo "│                                                        │"
+      echo "│   1. Open both Guard and Worker dashboard links       │"
+      echo '│      above. You will see a red `pairing required`     │'
+      echo "│      message — that is expected. Disconnected (1008)  │"
+      echo "│      means the same. After both pages load, return    │"
+      echo "│      here and choose Approve all pending below.       │"
+      echo "│                                                        │"
+      echo "│   If you see Token mismatch, rotate the keys (menu    │"
+      echo "│   option 1) and try again.                            │"
+      echo "└────────────────────────────────────────────────────────┘"
       echo
     fi
     guard_pending=()
