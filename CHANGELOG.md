@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.4.5] - 2026-04-03
+
+### Changed
+
+- **Setup wizard main menu (TUI):** Each step line shows the status emoji beside the step number and title (e.g. `5. ✅ browser init | ✅ CDP scripts installed`) so the row’s state is easier to scan; steps with no status text (healthcheck, help, restart) keep the previous layout without a leading emoji. Implemented via `print_menu_step` in **scripts/host/setup.sh**.
+
+[0.4.5]: https://github.com/mere/op-and-chloe/compare/v0.4.4...v0.4.5
+
 ## [0.4.4] - 2026-04-03
 
 ### Fixed

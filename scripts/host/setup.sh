@@ -1377,6 +1377,23 @@ run_step(){
   read -r -p "$TIGER Press Enter to return to menu..." _
 }
 
+# Menu row: emoji next to step number/title so status visually aligns with the line; full status on the right.
+print_menu_step(){
+  local n="$1" title="$2" full ic
+  full=$(step_status "$n")
+  if [ -z "$full" ]; then
+    printf "  %2d. %-26s | %s\n" "$n" "$title" ""
+    return
+  fi
+  case "$full" in
+    ✅*) ic="✅" ;;
+    ⚪*) ic="⚪" ;;
+    ⚠️*) ic="⚠️" ;;
+    *) ic=" " ;;
+  esac
+  printf "  %2d. %s %-22s | %s\n" "$n" "$ic" "$title" "$full"
+}
+
 menu_once(){
   welcome
   printf "$TIGER Checking status..."
@@ -1384,24 +1401,24 @@ menu_once(){
   echo
   echo "Follow these steps one by one:"
   echo
-  printf "  %2d. %-24s | %s\n"  1 "preflight"           "$(step_status 1)"
-  printf "  %2d. %-24s | %s\n"  2 "data location (volume)" "$(step_status 2)"
-  printf "  %2d. %-24s | %s\n"  3 "docker"              "$(step_status 3)"
-  printf "  %2d. %-24s | %s\n"  4 "environment"        "$(step_status 4)"
-  printf "  %2d. %-24s | %s\n"  5 "browser init"       "$(step_status 5)"
-  printf "  %2d. %-24s | %s\n"  6 "bitwarden"          "$(step_status 6)"
-  printf "  %2d. %-24s | %s\n"  7 "tailscale"          "$(step_status 7)"
-  printf "  %2d. %-24s | %s\n"  8 "start guard"        "$(step_status 8)"
-  printf "  %2d. %-24s | %s\n"  9 "start worker"       "$(step_status 9)"
-  printf "  %2d. %-24s | %s\n" 10 "start browser"      "$(step_status 10)"
-  printf "  %2d. %-24s | %s\n" 11 "configure Dashboards" "$(step_status 11)"
-  printf "  %2d. %-24s | %s\n" 12 "configure guard"    "$(step_status 12)"
-  printf "  %2d. %-24s | %s\n" 13 "configure worker"   "$(step_status 13)"
-  printf "  %2d. %-24s | %s\n" 14 "seed instructions" "$(step_status 14)"
-  printf "  %2d. %-24s | %s\n" 15 "guard admin mode"   "$(step_status 15)"
-  printf "  %2d. %-24s | %s\n" 16 "healthcheck"        "$(step_status 16)"
-  printf "  %2d. %-24s | %s\n" 17 "help / useful cmds" "$(step_status 17)"
-  printf "  %2d. %-24s | %s\n" 18 "restart all services" "$(step_status 18)"
+  print_menu_step  1 "preflight"
+  print_menu_step  2 "data location (volume)"
+  print_menu_step  3 "docker"
+  print_menu_step  4 "environment"
+  print_menu_step  5 "browser init"
+  print_menu_step  6 "bitwarden"
+  print_menu_step  7 "tailscale"
+  print_menu_step  8 "start guard"
+  print_menu_step  9 "start worker"
+  print_menu_step 10 "start browser"
+  print_menu_step 11 "configure Dashboards"
+  print_menu_step 12 "configure guard"
+  print_menu_step 13 "configure worker"
+  print_menu_step 14 "seed instructions"
+  print_menu_step 15 "guard admin mode"
+  print_menu_step 16 "healthcheck"
+  print_menu_step 17 "help / useful cmds"
+  print_menu_step 18 "restart all services"
   echo
   if check_done tailscale; then
     menu_tsdns=$(tailscale_dns)
