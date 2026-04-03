@@ -98,7 +98,9 @@ This is your day-to-day instance. Create all agents here. You get Bitwarden, ema
 
 When things break or you need restarts or big changes, talk to Op (admin with SSH access). Talk to Chloe for daily work.
 
-**Bun (optional):** Chloe’s worker image ships with [Bun](https://bun.sh). The stack does not require it. **`bun` and `bunx` are symlinked into `/usr/local/bin`** so OpenClaw’s agent shell (which uses a short allowlist `PATH` that includes `/usr/local/bin` but not Bun’s install dir) can still run them. For global Bun installs (e.g. `bun install -g @tobilu/qmd`), binaries often land under `~/.bun/bin`; either add that to how you invoke them or symlink the tool into `/usr/local/bin` the same way if agents need it on `PATH`.
+**Bun (optional):** Chloe’s worker image ships with [Bun](https://bun.sh). The stack does not require it for a minimal setup. **`bun` and `bunx` are symlinked into `/usr/local/bin`** so OpenClaw’s agent shell (short allowlist `PATH` with `/usr/local/bin`, not Bun’s install dir) can run them.
+
+**QMD (OpenClaw memory):** The worker image installs **`@tobilu/qmd`** with Bun and symlinks **`qmd` → `/usr/local/bin/qmd`**, so the gateway finds the same binary as agent shells. The worker entrypoint creates **`~/.openclaw/agents/<agent>/qmd/xdg-cache/qmd`** (including `main`) on the mounted state volume so SQLite can open the index. After rebuilding the worker image, run **`openclaw memory index --force`** once if a previous run left a bad or missing index.
 
 ---
 <p align="center">

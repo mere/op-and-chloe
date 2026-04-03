@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.6
-# Chloe (worker) tools: Bun + Himalaya + Python for m365 + Bitwarden CLI (BW runs in worker).
+# Chloe (worker) tools: Bun, QMD (OpenClaw memory), Himalaya, Python for m365, Bitwarden CLI (BW runs in worker).
 ARG OPENCLAW_BASE_IMAGE=ghcr.io/openclaw/openclaw:main
 FROM ${OPENCLAW_BASE_IMAGE}
 
@@ -34,5 +34,9 @@ RUN case "${TARGETARCH}" in \
 
 # Bitwarden CLI (worker holds vault access; no bridge)
 RUN npm i -g @bitwarden/cli
+
+# QMD for OpenClaw memory provider; symlink into /usr/local/bin like bun (restricted agent PATH).
+RUN /usr/local/bin/bun install -g @tobilu/qmd \
+ && ln -sf /usr/local/bun/bin/qmd /usr/local/bin/qmd
 
 USER node

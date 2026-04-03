@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.5.0] - 2026-04-03
+
+### Added
+
+- **Chloe worker — QMD (OpenClaw memory):** **docker/openclaw-worker-tools.Dockerfile** installs **`@tobilu/qmd`** with Bun and symlinks **`qmd`** into `/usr/local/bin` so the gateway and OpenClaw’s restricted agent `PATH` resolve the binary (fixes **`spawn qmd ENOENT`**).
+- **Worker entrypoint:** Ensures **`~/.openclaw/agents/main/qmd/xdg-cache/qmd`** and the same path under each existing **`agents/*/`** directory so the QMD SQLite store can be created on the mounted state volume (mitigates **`unable to open database file`** when parents were missing).
+
+### Changed
+
+- **README:** Documents bundled QMD, symlink behaviour, entrypoint directories, and running **`openclaw memory index --force`** after an image upgrade if the index was previously unhealthy.
+
+[0.5.0]: https://github.com/mere/op-and-chloe/compare/v0.4.10...v0.5.0
+
 ## [0.4.10] - 2026-04-03
 
 ### Fixed
