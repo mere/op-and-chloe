@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.4.8] - 2026-04-03
+
+### Changed
+
+- **Setup wizard — dashboard pairing callout:** Tweaked the bordered instructions in **scripts/host/setup.sh**: dropped the disconnected (1008) note; names **Approve all** as menu **option 3**; adds that pairing status above should show **✅ 2 paired** for Guard and for Worker when finished.
+
+[0.4.8]: https://github.com/mere/op-and-chloe/compare/v0.4.7...v0.4.8
+
 ## [0.4.7] - 2026-04-03
 
 ### Changed
