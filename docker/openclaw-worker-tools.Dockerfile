@@ -16,7 +16,10 @@ RUN apt-get update \
 # Bun (install to a global path so USER node sees it on PATH)
 ENV BUN_INSTALL=/usr/local/bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"
-RUN curl -fsSL https://bun.sh/install | bash
+# Agent shells get a restricted PATH (includes /usr/local/bin, not BUN_INSTALL).
+RUN curl -fsSL https://bun.sh/install | bash \
+ && ln -sf /usr/local/bun/bin/bun /usr/local/bin/bun \
+ && ln -sf /usr/local/bun/bin/bunx /usr/local/bin/bunx
 
 # Himalaya mail CLI (official release artifact)
 RUN case "${TARGETARCH}" in \

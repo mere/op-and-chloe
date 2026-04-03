@@ -98,7 +98,7 @@ This is your day-to-day instance. Create all agents here. You get Bitwarden, ema
 
 When things break or you need restarts or big changes, talk to Op (admin with SSH access). Talk to Chloe for daily work.
 
-**Bun (optional):** Chloe’s worker image ships with [Bun](https://bun.sh) on `PATH`. The stack does not require it for normal use. It is there so you can install and run **Bun-only** tooling when you want—for example advanced agent memory via **QMD**, or anything else that expects `bun` / `bunx`.
+**Bun (optional):** Chloe’s worker image ships with [Bun](https://bun.sh). The stack does not require it. **`bun` and `bunx` are symlinked into `/usr/local/bin`** so OpenClaw’s agent shell (which uses a short allowlist `PATH` that includes `/usr/local/bin` but not Bun’s install dir) can still run them. For global Bun installs (e.g. `bun install -g @tobilu/qmd`), binaries often land under `~/.bun/bin`; either add that to how you invoke them or symlink the tool into `/usr/local/bin` the same way if agents need it on `PATH`.
 
 ---
 <p align="center">

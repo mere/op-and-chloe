@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.4.10] - 2026-04-03
+
+### Fixed
+
+- **Chloe worker — Bun in OpenClaw agent shells:** OpenClaw uses a restricted `PATH` for agent shells (includes `/usr/local/bin`, not `/usr/local/bun/bin`), so `bun` was missing at runtime. **docker/openclaw-worker-tools.Dockerfile** now symlinks `bun` and `bunx` into `/usr/local/bin` after install.
+
+### Changed
+
+- **README — Bun (optional):** Documents the allowlist `PATH` behaviour, the symlinks, and that global Bun tools (e.g. **QMD**) may need a `/usr/local/bin` symlink for agents to see them.
+
+[0.4.10]: https://github.com/mere/op-and-chloe/compare/v0.4.9...v0.4.10
+
 ## [0.4.9] - 2026-04-03
 
 ### Added
