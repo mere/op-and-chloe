@@ -41,3 +41,5 @@ env/
 # debug logs from setup (pairing detection)
 scripts/host/.debug-*.txt
 .private/
+
+.DS_Store
