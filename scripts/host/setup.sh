@@ -806,7 +806,8 @@ step_env(){
   if [ -n "${OPENCLAW_VOLUME_ROOT:-}" ]; then
     local etc_dest="$OPENCLAW_VOLUME_ROOT/openclaw/etc/openclaw"
     local lib_dest="$OPENCLAW_VOLUME_ROOT/openclaw/var/lib/openclaw"
-    mkdir -p "$etc_dest" "$lib_dest"/{chloe/state,chloe/state/devices,chloe/workspace,guard/state,guard/state/devices,guard/workspace,browser}
+    mkdir -p "$etc_dest/sites-proxy" "$lib_dest"/{chloe/state,chloe/state/devices,chloe/workspace,chloe/workspace/sites,guard/state,guard/state/devices,guard/workspace,browser,sites-proxy/data,sites-proxy/config}
+    : > "$etc_dest/sites-proxy/sites.generated.caddy"
     chown -R 1000:1000 "$lib_dest"
     if [ ! -L /etc/openclaw ] && [ -e /etc/openclaw ] && [ "$(readlink -f /etc/openclaw 2>/dev/null)" != "$(readlink -f "$etc_dest" 2>/dev/null)" ]; then
       warn "/etc/openclaw already exists and is not a symlink; skipping symlink (data stays under /etc/openclaw)"
@@ -820,8 +821,9 @@ step_env(){
     fi
     ok "Created dirs under $OPENCLAW_VOLUME_ROOT and linked /etc/openclaw, /var/lib/openclaw"
   else
-    mkdir -p /etc/openclaw /var/lib/openclaw/{chloe/state,chloe/state/devices,chloe/workspace,guard/state,guard/state/devices,guard/workspace,browser}
-    chown -R 1000:1000 /var/lib/openclaw/chloe /var/lib/openclaw/guard /var/lib/openclaw/browser
+    mkdir -p /etc/openclaw/sites-proxy /var/lib/openclaw/{chloe/state,chloe/state/devices,chloe/workspace,chloe/workspace/sites,guard/state,guard/state/devices,guard/workspace,browser,sites-proxy/data,sites-proxy/config}
+    : > /etc/openclaw/sites-proxy/sites.generated.caddy
+    chown -R 1000:1000 /var/lib/openclaw/chloe /var/lib/openclaw/guard /var/lib/openclaw/browser /var/lib/openclaw/sites-proxy
   fi
   if [ ! -f "$ENV_FILE" ]; then
     cp "$STACK_DIR/config/env.example" "$ENV_FILE"
@@ -839,7 +841,10 @@ step_env(){
   echo "  /var/lib/openclaw/guard/workspace"
   echo "  /var/lib/openclaw/chloe/state"
   echo "  /var/lib/openclaw/chloe/workspace"
+  echo "  /var/lib/openclaw/chloe/workspace/sites"
   echo "  /var/lib/openclaw/browser"
+  echo "  /etc/openclaw/sites-proxy"
+  echo "  /var/lib/openclaw/sites-proxy"
   echo "  $ENV_FILE"
 }
 

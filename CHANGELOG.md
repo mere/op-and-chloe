@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.6.0] - 2026-04-10
+
+### Added
+
+- **Static site publishing from Chloe workspace:** Added a Caddy `site-proxy` service plus a `sites-reconciler` sidecar that watches `workspace/sites/sites.json` and serves each published site on its own subdomain under `SITES_BASE_DOMAIN`.
+- **Worker skill — opch-sites:** Documents the `sites/sites.json` publishing workflow for Chloe and keeps her writing registry entries and static files instead of raw proxy config.
+- **Sites validator regression tests:** Added focused tests for `scripts/sites/reconcile_sites.py` covering parent traversal, rejecting `sites/` itself, symlink rejection, and a valid site tree.
+
+### Changed
+
+- **Setup/env/docs:** Step 4 now creates proxy state directories plus `workspace/sites`, `config/env.example` includes site-publishing settings, and the README documents wildcard-DNS-based publishing from Chloe's workspace.
+- **Sites validator hardening:** Publishing now rejects `root` values that target `sites/` itself and rejects published trees containing symlinks, closing obvious traversal and file-leak paths.
+
+[0.6.0]: https://github.com/mere/op-and-chloe/compare/v0.5.0...v0.6.0
+
 ## [0.5.0] - 2026-04-03
 
 ### Added

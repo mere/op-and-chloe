@@ -10,14 +10,28 @@ INSTANCE=${INSTANCE:-op-and-chloe}
 
 cd "$STACK_DIR"
 
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck source=/dev/null
+  . "$ENV_FILE" 2>/dev/null || true
+  set +a
+fi
+
+mkdir -p \
+  "${OPENCLAW_WORKSPACE_DIR:-/var/lib/openclaw/chloe/workspace}/sites" \
+  "${OPENCLAW_SITES_PROXY_CONFIG_DIR:-/etc/openclaw/sites-proxy}" \
+  "${OPENCLAW_SITES_PROXY_DATA_DIR:-/var/lib/openclaw/sites-proxy/data}" \
+  "${OPENCLAW_SITES_PROXY_STORAGE_DIR:-/var/lib/openclaw/sites-proxy/config}"
+: > "${OPENCLAW_SITES_PROXY_CONFIG_DIR:-/etc/openclaw/sites-proxy}/sites.generated.caddy"
+
 echo "[start] syncing core instructions into workspaces"
 bash "$STACK_DIR/scripts/host/sync-workspaces.sh"
 
 echo "[start] building guard and worker images (openclaw-guard-tools:local, openclaw-worker-tools:local)"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build openclaw-guard openclaw-gateway
 
-echo "[start] pulling images (browser only; guard/worker are local builds)"
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull browser
+echo "[start] pulling images (browser, site proxy, sites reconciler)"
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull browser site-proxy sites-reconciler
 
 echo "[start] bringing stack up"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d

@@ -41,6 +41,8 @@ It looks like this:
 
 - **🔒 Private access via Tailscale.** Guard, worker, and Webtop are on your Tailscale network with optional HTTPS - no public ports. Use them from your phone or laptop.
 
+- **🌐 Static site publishing from Chloe.** Publish multiple sites from `workspace/sites/` using a single validated registry picked up by the proxy.
+
 - **❤️ Health Check.** Scripts to configure, verify and keep your stack healthy.
 
 - **🔑 Passwordless credentials** Bitwarden runs in Chloe’s container. Login and unlock are interactive only; no secrets stored in files.
@@ -95,6 +97,8 @@ The stack consists of:
 (You can name her/him/they/it anything; it will ask for a name once it's up and running. 😊)
 
 This is your day-to-day instance. Create all agents here. You get Bitwarden, email (Himalaya, M365), and webtop — standard OpenClaw; add skills and agents as you like.
+
+Chloe can also publish static sites from her workspace. Put the built outputs under `sites/`, register them in `sites/sites.json`, and the proxy will pick them up automatically.
 
 When things break or you need restarts or big changes, talk to Op (admin with SSH access). Talk to Chloe for daily work.
 
@@ -229,6 +233,51 @@ m365 mail list --top 20
 
 - **OpenClaw Web (Control UI, bind modes, Tailscale):** [https://docs.openclaw.ai/web](https://docs.openclaw.ai/web)
 
+## Publishing sites
+
+Published sites live in Chloe's workspace under `sites/`, with one registry file at `sites/sites.json`.
+
+Example:
+
+```text
+sites/
+  sites.json
+  hello/
+    dist/
+      index.html
+  docs/
+    build/
+      index.html
+```
+
+`sites/sites.json`:
+
+```json
+{
+  "sites": [
+    {
+      "name": "hello",
+      "subdomain": "hello",
+      "root": "hello/dist",
+      "spa": true
+    },
+    {
+      "name": "docs",
+      "subdomain": "docs",
+      "root": "docs/build"
+    }
+  ]
+}
+```
+
+- Set `SITES_BASE_DOMAIN` in `/etc/openclaw/stack.env`, for example `sites.example.com`.
+- Point wildcard DNS such as `*.sites.example.com` at the VPS.
+- Restart the stack after changing env or proxy settings: `sudo ./start.sh`
+- All `root` paths are relative to `workspace/sites/`.
+- Each `root` must point to a subdirectory inside `workspace/sites/`, not `workspace/sites/` itself.
+- Published trees must not contain symlinks.
+- Chloe should only write the registry and site files under `workspace/sites/`; she should not write raw proxy config.
+
 ## Troubleshooting
 
 **`./openclaw-guard devices list` (or worker) shows "device token mismatch":**
@@ -245,6 +294,14 @@ m365 mail list --top 20
 2. Ensure Tailscale serve is configured: `tailscale serve status`  -  you should see port 445 → 127.0.0.1:6080
 3. Re-apply serve config: `sudo ./scripts/host/apply-tailscale-serve.sh`
 4. For HTTPS to work, enable [HTTPS certificates](https://tailscale.com/kb/1153/enabling-https) in the admin console and run `sudo tailscale cert` on the VPS
+
+**Published site not appearing on its subdomain:**
+1. Ensure `SITES_BASE_DOMAIN` is set in `/etc/openclaw/stack.env`
+2. Ensure wildcard DNS for `*.your-base-domain` points at the VPS
+3. Ensure `workspace/sites/sites.json` exists and contains the site entry
+4. Ensure `root` points to an existing directory inside `workspace/sites/`
+5. Ensure the published tree does not contain symlinks
+6. Check the `site-proxy` and `sites-reconciler` containers with `docker compose ps`
 
 ## Security model
 
