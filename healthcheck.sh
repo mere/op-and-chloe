@@ -19,3 +19,12 @@ echo "== watchdog timer =="
 systemctl is-enabled openclaw-cdp-watchdog.timer >/dev/null 2>&1 && systemctl is-active openclaw-cdp-watchdog.timer >/dev/null 2>&1 \
   && echo "openclaw-cdp-watchdog.timer: enabled+active" \
   || echo "openclaw-cdp-watchdog.timer: not enabled/active"
+
+echo
+
+echo "== daily backups =="
+if [ -f /etc/cron.d/openclaw-daily-backup ]; then
+  echo "openclaw-daily-backup: enabled"
+else
+  echo "openclaw-daily-backup: disabled"
+fi

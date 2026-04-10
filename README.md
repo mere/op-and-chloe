@@ -171,12 +171,27 @@ Run full health check on the stack:
 sudo ./healthcheck.sh
 ```
 
+Run a manual backup now:
+```bash
+sudo ./scripts/host/daily-backup.sh --force
+```
+
 To run any `openclaw` command, use:
 ```bash
 ./openclaw-guard some command
 # or
 ./openclaw-worker some command
 ```
+
+## Daily backups
+
+Use setup step `16. daily backups` to toggle scheduled backups, run a one-off backup immediately, and choose where the compressed archives are stored.
+
+- Default: disabled
+- Schedule: once per day at `03:17` server time via `/etc/cron.d/openclaw-daily-backup`
+- Default backup directory: a sibling `backups/` folder next to the stack checkout, for example `/opt/backups/op-and-chloe`
+- Archive contents: `/etc/openclaw`, Chloe's `state`, and Chloe's `workspace`
+- Manual run: `sudo ./scripts/host/daily-backup.sh --force`
 
 
 ## System diagram

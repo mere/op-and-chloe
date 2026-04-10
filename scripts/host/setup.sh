@@ -39,6 +39,8 @@ worker_name="${INSTANCE}-openclaw-gateway"
 browser_name="${INSTANCE}-browser"
 worker_cfg="/var/lib/openclaw/chloe/state/openclaw.json"
 guard_cfg="/var/lib/openclaw/guard/state/openclaw.json"
+BACKUP_CRON_FILE="/etc/cron.d/openclaw-daily-backup"
+BACKUP_LOG_FILE="/var/log/openclaw-daily-backup.log"
 
 welcome(){
   echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
@@ -97,9 +99,25 @@ step_status(){
     13) configured_label worker ;;
     14) check_seed_done && echo "✅ Seeded" || echo "⚪ Not seeded" ;;
     15) guard_admin_mode_enabled && echo "⚠️ Enabled (gives guard full VPS access — disable when not needed)" || echo "⚪ Disabled" ;;
-    16) echo "" ;;
+    16)
+      if [ ! -f "$ENV_FILE" ]; then
+        echo "⚪ Configure env first"
+      else
+        load_backup_settings
+        if [ "${DAILY_BACKUPS_ENABLED:-disabled}" = "enabled" ]; then
+          if [ -f "$BACKUP_CRON_FILE" ]; then
+            echo "✅ Enabled (${DAILY_BACKUPS_DIR})"
+          else
+            echo "⚠️ Enabled (cron missing)"
+          fi
+        else
+          echo "⚪ Disabled"
+        fi
+      fi
+      ;;
     17) echo "" ;;
     18) echo "" ;;
+    19) echo "" ;;
     *) echo "—" ;;
   esac
 }
@@ -225,6 +243,114 @@ PY2
 }
 
 apply_tailscale_bind(){ :; }
+
+default_backup_dir(){
+  local parent base
+  parent=$(dirname "$STACK_DIR")
+  base=$(basename "$STACK_DIR")
+  echo "$parent/backups/$base"
+}
+
+get_env_value(){
+  local key="$1"
+  [ -f "$ENV_FILE" ] || return 0
+  grep -E "^${key}=" "$ENV_FILE" 2>/dev/null | cut -d= -f2- | tr -d '"' | head -1
+}
+
+set_env_value(){
+  local key="$1" value="$2"
+  [ -f "$ENV_FILE" ] || return 1
+  python3 - "$ENV_FILE" "$key" "$value" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+value = sys.argv[3]
+prefix = f"{key}="
+lines = path.read_text().splitlines()
+out = []
+replaced = False
+for line in lines:
+    if line.startswith(prefix):
+        out.append(f"{key}={value}")
+        replaced = True
+    else:
+        out.append(line)
+if not replaced:
+    if out and out[-1] != "":
+        out.append("")
+    out.append(f"{key}={value}")
+path.write_text("\n".join(out) + "\n")
+PY
+}
+
+ensure_backup_env_defaults(){
+  local current_enabled current_dir default_dir
+  [ -f "$ENV_FILE" ] || return 1
+  default_dir=$(default_backup_dir)
+  current_enabled=$(get_env_value DAILY_BACKUPS_ENABLED)
+  current_dir=$(get_env_value DAILY_BACKUPS_DIR)
+  [ -n "$current_enabled" ] || set_env_value DAILY_BACKUPS_ENABLED disabled
+  [ -n "$current_dir" ] || set_env_value DAILY_BACKUPS_DIR "$default_dir"
+}
+
+load_backup_settings(){
+  DAILY_BACKUPS_ENABLED=$(get_env_value DAILY_BACKUPS_ENABLED)
+  DAILY_BACKUPS_DIR=$(get_env_value DAILY_BACKUPS_DIR)
+  DAILY_BACKUPS_ENABLED=${DAILY_BACKUPS_ENABLED:-disabled}
+  DAILY_BACKUPS_DIR=${DAILY_BACKUPS_DIR:-$(default_backup_dir)}
+}
+
+validate_backup_dir(){
+  local target="$1"
+  local canonical state_dir workspace_dir etc_dir
+  [ -n "$target" ] || { warn "Backup directory cannot be empty."; return 1; }
+  case "$target" in
+    /*) ;;
+    *) warn "Backup directory must be an absolute path."; return 1 ;;
+  esac
+  case "$target" in
+    *[[:space:]]*) warn "Backup directory must not contain spaces."; return 1 ;;
+  esac
+  mkdir -p "$target" 2>/dev/null || { warn "Could not create backup directory: $target"; return 1; }
+  canonical=$(readlink -f "$target" 2>/dev/null || true)
+  state_dir=$(get_env_value OPENCLAW_STATE_DIR); state_dir=${state_dir:-/var/lib/openclaw/chloe/state}
+  workspace_dir=$(get_env_value OPENCLAW_WORKSPACE_DIR); workspace_dir=${workspace_dir:-/var/lib/openclaw/chloe/workspace}
+  etc_dir=$(dirname "$ENV_FILE")
+  state_dir=$(readlink -f "$state_dir" 2>/dev/null || echo "$state_dir")
+  workspace_dir=$(readlink -f "$workspace_dir" 2>/dev/null || echo "$workspace_dir")
+  etc_dir=$(readlink -f "$etc_dir" 2>/dev/null || echo "$etc_dir")
+  case "$canonical" in
+    "$state_dir"|"$state_dir"/*|"$workspace_dir"|"$workspace_dir"/*|"$etc_dir"|"$etc_dir"/*)
+      warn "Backup directory must live outside Chloe state/workspace and /etc/openclaw."
+      return 1
+      ;;
+  esac
+}
+
+ensure_cron_service(){
+  if ! dpkg -s cron >/dev/null 2>&1; then
+    say "Installing cron package"
+    apt-get update -y >/dev/null
+    apt-get install -y cron >/dev/null
+  fi
+  systemctl enable --now cron >/dev/null 2>&1 || true
+}
+
+write_daily_backup_cron(){
+  mkdir -p "$DAILY_BACKUPS_DIR"
+  cat > "$BACKUP_CRON_FILE" <<EOF
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+17 3 * * * root STACK_DIR="$STACK_DIR" ENV_FILE="$ENV_FILE" /bin/bash "$STACK_DIR/scripts/host/daily-backup.sh" >> "$BACKUP_LOG_FILE" 2>&1
+EOF
+  chmod 0644 "$BACKUP_CRON_FILE"
+}
+
+remove_daily_backup_cron(){
+  rm -f "$BACKUP_CRON_FILE"
+}
 
 
 ensure_inline_buttons(){
@@ -830,10 +956,12 @@ step_env(){
     sed -i "s#^OPENCLAW_GATEWAY_TOKEN=.*#OPENCLAW_GATEWAY_TOKEN=$(openssl rand -hex 32)#" "$ENV_FILE"
     sed -i "s#^OPENCLAW_GUARD_GATEWAY_TOKEN=.*#OPENCLAW_GUARD_GATEWAY_TOKEN=$(openssl rand -hex 24)#" "$ENV_FILE"
     sed -i "s#^OPENCLAW_STACK_DIR=.*#OPENCLAW_STACK_DIR=$STACK_DIR#" "$ENV_FILE"
+    sed -i "s#^DAILY_BACKUPS_DIR=.*#DAILY_BACKUPS_DIR=$(default_backup_dir)#" "$ENV_FILE"
     ok "Created $ENV_FILE with fresh gateway tokens"
   else
     ok "Env already present: $ENV_FILE"
   fi
+  ensure_backup_env_defaults
   echo
   echo "Created:"
   echo "  /etc/openclaw/"
@@ -846,6 +974,10 @@ step_env(){
   echo "  /etc/openclaw/sites-proxy"
   echo "  /var/lib/openclaw/sites-proxy"
   echo "  $ENV_FILE"
+  echo
+  echo "Daily backups:"
+  echo "  DAILY_BACKUPS_ENABLED=$(get_env_value DAILY_BACKUPS_ENABLED)"
+  echo "  DAILY_BACKUPS_DIR=$(get_env_value DAILY_BACKUPS_DIR)"
 }
 
 step_browser_init(){
@@ -962,6 +1094,70 @@ step_restart_all(){
   say "Stops the stack and starts it again (guard, worker, browser)."
   STACK_DIR="$STACK_DIR" ENV_FILE="$ENV_FILE" "$STACK_DIR/restart.sh"
   ok "Restart finished"
+}
+
+step_daily_backups(){
+  local pick new_dir
+  say "Daily backups"
+  say "Configure compressed daily backups for Chloe's workspace and config."
+  if [ ! -f "$ENV_FILE" ]; then
+    warn "No env file at $ENV_FILE — run step 4 first."
+    return
+  fi
+  ensure_backup_env_defaults
+  load_backup_settings
+  echo
+  echo "Current:"
+  echo "  Enabled : $DAILY_BACKUPS_ENABLED"
+  echo "  Location: $DAILY_BACKUPS_DIR"
+  echo "  Schedule: daily at 03:17 server time"
+  echo
+  echo "  0. Return to main menu"
+  echo "  1. Enabled"
+  echo "  2. Disabled"
+  echo "  3. Backup now"
+  echo
+  read -r -p "$TIGER Select [0-3]: " pick
+  case "$pick" in
+    0)
+      say "No change."
+      return
+      ;;
+    1)
+      read -r -p "$TIGER Backup directory [$DAILY_BACKUPS_DIR]: " new_dir
+      new_dir=${new_dir:-$DAILY_BACKUPS_DIR}
+      if ! validate_backup_dir "$new_dir"; then
+        return
+      fi
+      set_env_value DAILY_BACKUPS_DIR "$new_dir"
+      set_env_value DAILY_BACKUPS_ENABLED enabled
+      load_backup_settings
+      ensure_cron_service
+      write_daily_backup_cron
+      ok "Daily backups enabled"
+      echo "  Archive location: $DAILY_BACKUPS_DIR"
+      echo "  Cron file: $BACKUP_CRON_FILE"
+      ;;
+    2)
+      set_env_value DAILY_BACKUPS_ENABLED disabled
+      remove_daily_backup_cron
+      ok "Daily backups disabled"
+      echo "  Existing backup files were kept."
+      ;;
+    3)
+      if ! validate_backup_dir "$DAILY_BACKUPS_DIR"; then
+        return
+      fi
+      if ENV_FILE="$ENV_FILE" STACK_DIR="$STACK_DIR" bash "$STACK_DIR/scripts/host/daily-backup.sh" --force; then
+        ok "Backup completed"
+      else
+        warn "Backup failed"
+      fi
+      ;;
+    *)
+      warn "Invalid choice"
+      ;;
+  esac
 }
 
 step_seed_instructions(){
@@ -1376,6 +1572,10 @@ step_help_useful_commands(){
   echo "Run OpenClaw CLI:"
   echo "  ./openclaw-guard"
   echo "  ./openclaw-worker"
+  echo
+  echo "Daily backups:"
+  echo "  sudo ./scripts/host/daily-backup.sh --force"
+  echo "  grep '^DAILY_BACKUPS_' /etc/openclaw/stack.env"
 }
 
 run_step(){
@@ -1397,9 +1597,10 @@ run_step(){
     13) sync_core_workspaces; step_configure_worker ;;
     14) step_seed_instructions ;;
     15) step_guard_admin_mode ;;
-    16) step_verify ;;
-    17) step_help_useful_commands ;;
-    18) step_restart_all ;;
+    16) step_daily_backups ;;
+    17) step_verify ;;
+    18) step_help_useful_commands ;;
+    19) step_restart_all ;;
     *) warn "Unknown step" ;;
   esac
   fix_repo_ownership
@@ -1448,9 +1649,10 @@ menu_once(){
   print_menu_step 13 "configure worker"
   print_menu_step 14 "seed instructions"
   print_menu_step 15 "guard admin mode"
-  print_menu_step 16 "healthcheck"
-  print_menu_step 17 "help / useful cmds"
-  print_menu_step 18 "restart all services"
+  print_menu_step 16 "daily backups"
+  print_menu_step 17 "healthcheck"
+  print_menu_step 18 "help / useful cmds"
+  print_menu_step 19 "restart all services"
   echo
   if check_done tailscale; then
     menu_tsdns=$(tailscale_dns)
@@ -1462,10 +1664,10 @@ menu_once(){
       echo
     fi
   fi
-  read -r -p "$TIGER Select step [1-18] or 0 to exit: " pick
+  read -r -p "$TIGER Select step [1-19] or 0 to exit: " pick
   case "$pick" in
     0) say "Exiting setup wizard. See you soon."; return 1 ;;
-    1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18) run_step "$pick" ;;
+    1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19) run_step "$pick" ;;
     *) warn "Invalid choice" ;;
   esac
   return 0

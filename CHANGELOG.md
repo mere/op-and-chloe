@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.7.0] - 2026-04-10
+
+### Added
+
+- **Static site publishing from Chloe workspace:** Added a Caddy `site-proxy` service plus a `sites-reconciler` sidecar that watches `workspace/sites/sites.json` and serves each published site on its own subdomain under `SITES_BASE_DOMAIN`.
+- **Worker skill — opch-sites:** Documents the `sites/sites.json` publishing workflow for Chloe and keeps her writing registry entries and static files instead of raw proxy config.
+- **Sites validator regression tests:** Added focused tests for `scripts/sites/reconcile_sites.py` covering parent traversal, rejecting `sites/` itself, symlink rejection, and a valid site tree.
+- **Daily host backups:** Added a setup-wizard step plus `scripts/host/daily-backup.sh` to create compressed daily backups of Chloe's workspace/config, with archives stored in a configurable host directory.
+- **Backup now action:** The daily-backups submenu can now run an immediate one-off backup, and the backup script supports `--force` for manual runs even when the daily schedule is disabled.
+
+### Changed
+
+- **Setup/env/docs:** Step 4 now creates proxy state directories plus `workspace/sites`, `config/env.example` includes site-publishing settings, and the README documents wildcard-DNS-based publishing from Chloe's workspace.
+- **Sites validator hardening:** Publishing now rejects `root` values that target `sites/` itself and rejects published trees containing symlinks, closing obvious traversal and file-leak paths.
+- **Healthcheck/setup UI:** Healthcheck now reports whether daily backups are enabled, and setup shows a dedicated `daily backups` step with enabled/disabled status from `stack.env`.
+- **Backup archive safety:** Manual and scheduled backups now fail fast when source directories are missing and only move fully written archives into the backup directory.
+
+[0.7.0]: https://github.com/mere/op-and-chloe/compare/v0.6.0...v0.7.0
+
 ## [0.6.0] - 2026-04-10
 
 ### Added
