@@ -106,7 +106,7 @@ step_status(){
         load_backup_settings
         if [ "${DAILY_BACKUPS_ENABLED:-disabled}" = "enabled" ]; then
           if [ -f "$BACKUP_CRON_FILE" ]; then
-            echo "✅ Enabled (${DAILY_BACKUPS_DIR})"
+            echo "✅ Enabled ($(backup_retention_label))"
           else
             echo "⚠️ Enabled (cron missing)"
           fi
@@ -286,20 +286,42 @@ PY
 }
 
 ensure_backup_env_defaults(){
-  local current_enabled current_dir default_dir
+  local current_enabled current_dir current_retention default_dir
   [ -f "$ENV_FILE" ] || return 1
   default_dir=$(default_backup_dir)
   current_enabled=$(get_env_value DAILY_BACKUPS_ENABLED)
   current_dir=$(get_env_value DAILY_BACKUPS_DIR)
+  current_retention=$(get_env_value DAILY_BACKUPS_RETENTION_COUNT)
   [ -n "$current_enabled" ] || set_env_value DAILY_BACKUPS_ENABLED disabled
   [ -n "$current_dir" ] || set_env_value DAILY_BACKUPS_DIR "$default_dir"
+  [ -n "$current_retention" ] || set_env_value DAILY_BACKUPS_RETENTION_COUNT 30
 }
 
 load_backup_settings(){
   DAILY_BACKUPS_ENABLED=$(get_env_value DAILY_BACKUPS_ENABLED)
   DAILY_BACKUPS_DIR=$(get_env_value DAILY_BACKUPS_DIR)
+  DAILY_BACKUPS_RETENTION_COUNT=$(get_env_value DAILY_BACKUPS_RETENTION_COUNT)
   DAILY_BACKUPS_ENABLED=${DAILY_BACKUPS_ENABLED:-disabled}
   DAILY_BACKUPS_DIR=${DAILY_BACKUPS_DIR:-$(default_backup_dir)}
+  DAILY_BACKUPS_RETENTION_COUNT=${DAILY_BACKUPS_RETENTION_COUNT:-30}
+}
+
+backup_retention_label(){
+  if [ "${DAILY_BACKUPS_RETENTION_COUNT:-30}" = "0" ]; then
+    echo "keep all"
+  else
+    echo "${DAILY_BACKUPS_RETENTION_COUNT} kept"
+  fi
+}
+
+validate_backup_retention_count(){
+  local value="$1"
+  case "$value" in
+    ''|*[!0-9]*)
+      warn "Retention count must be a non-negative integer."
+      return 1
+      ;;
+  esac
 }
 
 validate_backup_dir(){
@@ -957,6 +979,7 @@ step_env(){
     sed -i "s#^OPENCLAW_GUARD_GATEWAY_TOKEN=.*#OPENCLAW_GUARD_GATEWAY_TOKEN=$(openssl rand -hex 24)#" "$ENV_FILE"
     sed -i "s#^OPENCLAW_STACK_DIR=.*#OPENCLAW_STACK_DIR=$STACK_DIR#" "$ENV_FILE"
     sed -i "s#^DAILY_BACKUPS_DIR=.*#DAILY_BACKUPS_DIR=$(default_backup_dir)#" "$ENV_FILE"
+    sed -i "s#^DAILY_BACKUPS_RETENTION_COUNT=.*#DAILY_BACKUPS_RETENTION_COUNT=30#" "$ENV_FILE"
     ok "Created $ENV_FILE with fresh gateway tokens"
   else
     ok "Env already present: $ENV_FILE"
@@ -978,6 +1001,7 @@ step_env(){
   echo "Daily backups:"
   echo "  DAILY_BACKUPS_ENABLED=$(get_env_value DAILY_BACKUPS_ENABLED)"
   echo "  DAILY_BACKUPS_DIR=$(get_env_value DAILY_BACKUPS_DIR)"
+  echo "  DAILY_BACKUPS_RETENTION_COUNT=$(get_env_value DAILY_BACKUPS_RETENTION_COUNT)"
 }
 
 step_browser_init(){
@@ -1097,7 +1121,7 @@ step_restart_all(){
 }
 
 step_daily_backups(){
-  local pick new_dir
+  local pick new_dir new_retention
   say "Daily backups"
   say "Configure compressed daily backups for Chloe's workspace and config."
   if [ ! -f "$ENV_FILE" ]; then
@@ -1110,14 +1134,16 @@ step_daily_backups(){
   echo "Current:"
   echo "  Enabled : $DAILY_BACKUPS_ENABLED"
   echo "  Location: $DAILY_BACKUPS_DIR"
+  echo "  Retention: $DAILY_BACKUPS_RETENTION_COUNT backups (0 = keep all)"
   echo "  Schedule: daily at 03:17 server time"
   echo
   echo "  0. Return to main menu"
   echo "  1. Enabled"
   echo "  2. Disabled"
   echo "  3. Backup now"
+  echo "  4. Set retention count"
   echo
-  read -r -p "$TIGER Select [0-3]: " pick
+  read -r -p "$TIGER Select [0-4]: " pick
   case "$pick" in
     0)
       say "No change."
@@ -1136,6 +1162,7 @@ step_daily_backups(){
       write_daily_backup_cron
       ok "Daily backups enabled"
       echo "  Archive location: $DAILY_BACKUPS_DIR"
+      echo "  Retention count: $DAILY_BACKUPS_RETENTION_COUNT"
       echo "  Cron file: $BACKUP_CRON_FILE"
       ;;
     2)
@@ -1153,6 +1180,17 @@ step_daily_backups(){
       else
         warn "Backup failed"
       fi
+      ;;
+    4)
+      read -r -p "$TIGER Retention count [$DAILY_BACKUPS_RETENTION_COUNT]: " new_retention
+      new_retention=${new_retention:-$DAILY_BACKUPS_RETENTION_COUNT}
+      if ! validate_backup_retention_count "$new_retention"; then
+        return
+      fi
+      set_env_value DAILY_BACKUPS_RETENTION_COUNT "$new_retention"
+      load_backup_settings
+      ok "Retention count updated"
+      echo "  Retention count: $DAILY_BACKUPS_RETENTION_COUNT (0 = keep all)"
       ;;
     *)
       warn "Invalid choice"

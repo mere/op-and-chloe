@@ -190,6 +190,8 @@ Use setup step `16. daily backups` to toggle scheduled backups, run a one-off ba
 - Default: disabled
 - Schedule: once per day at `03:17` server time via `/etc/cron.d/openclaw-daily-backup`
 - Default backup directory: a sibling `backups/` folder next to the stack checkout, for example `/opt/backups/op-and-chloe`
+- Default retention: keep the last `30` backups
+- Retention `0` means keep all backups with no pruning
 - Archive contents: `/etc/openclaw`, Chloe's `state`, and Chloe's `workspace`
 - Manual run: `sudo ./scripts/host/daily-backup.sh --force`
 

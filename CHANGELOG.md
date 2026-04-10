@@ -20,6 +20,7 @@ The format is based on [Common Changelog](https://common-changelog.org).
 - **Sites validator hardening:** Publishing now rejects `root` values that target `sites/` itself and rejects published trees containing symlinks, closing obvious traversal and file-leak paths.
 - **Healthcheck/setup UI:** Healthcheck now reports whether daily backups are enabled, and setup shows a dedicated `daily backups` step with enabled/disabled status from `stack.env`.
 - **Backup archive safety:** Manual and scheduled backups now fail fast when source directories are missing and only move fully written archives into the backup directory.
+- **Backup retention:** Daily backups now default to keeping the last `30` archives, prune oldest backups only after a successful run, and expose retention control in setup and healthcheck.
 
 [0.7.0]: https://github.com/mere/op-and-chloe/compare/v0.6.0...v0.7.0
 

@@ -28,3 +28,8 @@ if [ -f /etc/cron.d/openclaw-daily-backup ]; then
 else
   echo "openclaw-daily-backup: disabled"
 fi
+if [ -f "$ENV_FILE" ]; then
+  retention=$(grep -E '^DAILY_BACKUPS_RETENTION_COUNT=' "$ENV_FILE" | cut -d= -f2- | tr -d '"' | head -1)
+  retention=${retention:-30}
+  echo "openclaw-daily-backup retention: $retention"
+fi

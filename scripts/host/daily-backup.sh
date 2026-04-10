@@ -32,6 +32,7 @@ default_backup_dir(){
 
 DAILY_BACKUPS_ENABLED=${DAILY_BACKUPS_ENABLED:-disabled}
 DAILY_BACKUPS_DIR=${DAILY_BACKUPS_DIR:-$(default_backup_dir)}
+DAILY_BACKUPS_RETENTION_COUNT=${DAILY_BACKUPS_RETENTION_COUNT:-30}
 OPENCLAW_STATE_DIR=${OPENCLAW_STATE_DIR:-/var/lib/openclaw/chloe/state}
 OPENCLAW_WORKSPACE_DIR=${OPENCLAW_WORKSPACE_DIR:-/var/lib/openclaw/chloe/workspace}
 OPENCLAW_ETC_DIR=${OPENCLAW_ETC_DIR:-$(dirname "$ENV_FILE")}
@@ -40,6 +41,13 @@ if [ "$FORCE_RUN" -ne 1 ] && [ "$DAILY_BACKUPS_ENABLED" != "enabled" ]; then
   echo "[backup] daily backups disabled"
   exit 0
 fi
+
+case "$DAILY_BACKUPS_RETENTION_COUNT" in
+  ''|*[!0-9]*)
+    echo "[backup] DAILY_BACKUPS_RETENTION_COUNT must be a non-negative integer" >&2
+    exit 1
+    ;;
+esac
 
 mkdir -p "$DAILY_BACKUPS_DIR"
 
@@ -86,5 +94,19 @@ tar -czf "$tmp_archive_path" \
   -C "$tmp_dir" manifest.txt
 
 mv "$tmp_archive_path" "$archive_path"
+
+if [ "$DAILY_BACKUPS_RETENTION_COUNT" -gt 0 ]; then
+  python3 - "$DAILY_BACKUPS_DIR" "$DAILY_BACKUPS_RETENTION_COUNT" <<'PY'
+from pathlib import Path
+import sys
+
+backup_dir = Path(sys.argv[1])
+keep = int(sys.argv[2])
+archives = sorted(backup_dir.glob("openclaw-backup-*.tar.gz"))
+for path in archives[:-keep]:
+    path.unlink(missing_ok=True)
+    print(f"[backup] pruned {path}")
+PY
+fi
 
 echo "[backup] complete: $archive_path"
