@@ -33,3 +33,18 @@ if [ -f "$ENV_FILE" ]; then
   retention=${retention:-30}
   echo "openclaw-daily-backup retention: $retention"
 fi
+
+echo
+
+echo "== sites publishing =="
+if [ -f "$ENV_FILE" ]; then
+  sites_enabled=$(grep -E '^SITES_ENABLED=' "$ENV_FILE" | cut -d= -f2- | tr -d '"' | head -1)
+  sites_domain=$(grep -E '^SITES_BASE_DOMAIN=' "$ENV_FILE" | cut -d= -f2- | tr -d '"' | head -1)
+  sites_enabled=${sites_enabled:-disabled}
+  if [ "$sites_enabled" = "enabled" ]; then
+    echo "sites publishing: enabled"
+    echo "sites base domain: ${sites_domain:-<not set>}"
+  else
+    echo "sites publishing: disabled"
+  fi
+fi

@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.7.1] - 2026-04-10
+
+### Added
+
+- **Sites publishing setup step:** Added a dedicated `sites publishing` menu in `scripts/host/setup.sh` so users can enable, disable, and refresh public site publishing without editing `stack.env` manually.
+
+### Changed
+
+- **Sites startup lifecycle:** `site-proxy` and `sites-reconciler` now live behind the `sites` Docker Compose profile and only start when `SITES_ENABLED=enabled`.
+- **Setup and health reporting:** Setup step `4. environment`, `healthcheck.sh`, `scripts/host/stack-health.sh`, `start.sh`, and `stop.sh` now surface sites-publishing state consistently and keep the registry/runtime directories ready for Chloe.
+- **README:** Documents the new setup-wizard flow for enabling and disabling sites publishing.
+
+[0.7.1]: https://github.com/mere/op-and-chloe/compare/v0.7.0...v0.7.1
+
 ## [0.7.0] - 2026-04-10
 
 ### Added

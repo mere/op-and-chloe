@@ -22,6 +22,7 @@ services:
   site-proxy:
     image: caddy:2
     container_name: ${INSTANCE:-op-and-chloe}-site-proxy
+    profiles: ["sites"]
     command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile", "--watch"]
     ports:
       - "${SITES_HTTP_HOST:-0.0.0.0}:${SITES_HTTP_PORT:-80}:80"
@@ -37,6 +38,7 @@ services:
   sites-reconciler:
     image: python:3.12-slim
     container_name: ${INSTANCE:-op-and-chloe}-sites-reconciler
+    profiles: ["sites"]
     command:
       - python
       - /opt/op-and-chloe/scripts/sites/reconcile_sites.py

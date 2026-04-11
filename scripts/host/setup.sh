@@ -37,6 +37,8 @@ sep(){ echo "──────────────────────�
 guard_name="${INSTANCE}-openclaw-guard"
 worker_name="${INSTANCE}-openclaw-gateway"
 browser_name="${INSTANCE}-browser"
+site_proxy_name="${INSTANCE}-site-proxy"
+sites_reconciler_name="${INSTANCE}-sites-reconciler"
 worker_cfg="/var/lib/openclaw/chloe/state/openclaw.json"
 guard_cfg="/var/lib/openclaw/guard/state/openclaw.json"
 BACKUP_CRON_FILE="/etc/cron.d/openclaw-daily-backup"
@@ -115,9 +117,25 @@ step_status(){
         fi
       fi
       ;;
-    17) echo "" ;;
+    17)
+      if [ ! -f "$ENV_FILE" ]; then
+        echo "⚪ Configure env first"
+      else
+        load_sites_settings
+        if [ "$SITES_ENABLED" != "enabled" ]; then
+          echo "⚪ Disabled"
+        elif [ -z "$SITES_BASE_DOMAIN" ]; then
+          echo "⚠️ Enabled (domain missing)"
+        elif sites_services_running; then
+          echo "✅ Enabled (${SITES_BASE_DOMAIN})"
+        else
+          echo "⚠️ Enabled (${SITES_BASE_DOMAIN}, services not running)"
+        fi
+      fi
+      ;;
     18) echo "" ;;
     19) echo "" ;;
+    20) echo "" ;;
     *) echo "—" ;;
   esac
 }
@@ -372,6 +390,99 @@ EOF
 
 remove_daily_backup_cron(){
   rm -f "$BACKUP_CRON_FILE"
+}
+
+normalize_enabled_value(){
+  case "${1:-}" in
+    enabled|ENABLE|Enabled|true|TRUE|True|1|yes|YES|Yes|on|ON|On) echo "enabled" ;;
+    *) echo "disabled" ;;
+  esac
+}
+
+ensure_sites_env_defaults(){
+  [ -f "$ENV_FILE" ] || return 1
+  [ -n "$(get_env_value SITES_ENABLED)" ] || set_env_value SITES_ENABLED disabled
+  set_env_value SITES_BASE_DOMAIN "$(get_env_value SITES_BASE_DOMAIN)"
+  [ -n "$(get_env_value SITES_HTTP_HOST)" ] || set_env_value SITES_HTTP_HOST 0.0.0.0
+  [ -n "$(get_env_value SITES_HTTP_PORT)" ] || set_env_value SITES_HTTP_PORT 80
+  [ -n "$(get_env_value SITES_HTTPS_HOST)" ] || set_env_value SITES_HTTPS_HOST 0.0.0.0
+  [ -n "$(get_env_value SITES_HTTPS_PORT)" ] || set_env_value SITES_HTTPS_PORT 443
+  [ -n "$(get_env_value SITES_RECONCILE_INTERVAL)" ] || set_env_value SITES_RECONCILE_INTERVAL 5
+  [ -n "$(get_env_value OPENCLAW_SITES_PROXY_CONFIG_DIR)" ] || set_env_value OPENCLAW_SITES_PROXY_CONFIG_DIR /etc/openclaw/sites-proxy
+  [ -n "$(get_env_value OPENCLAW_SITES_PROXY_DATA_DIR)" ] || set_env_value OPENCLAW_SITES_PROXY_DATA_DIR /var/lib/openclaw/sites-proxy/data
+  [ -n "$(get_env_value OPENCLAW_SITES_PROXY_STORAGE_DIR)" ] || set_env_value OPENCLAW_SITES_PROXY_STORAGE_DIR /var/lib/openclaw/sites-proxy/config
+}
+
+load_sites_settings(){
+  SITES_ENABLED=$(normalize_enabled_value "$(get_env_value SITES_ENABLED)")
+  SITES_BASE_DOMAIN=$(get_env_value SITES_BASE_DOMAIN)
+  SITES_BASE_DOMAIN=${SITES_BASE_DOMAIN%.}
+  SITES_HTTP_HOST=$(get_env_value SITES_HTTP_HOST); SITES_HTTP_HOST=${SITES_HTTP_HOST:-0.0.0.0}
+  SITES_HTTP_PORT=$(get_env_value SITES_HTTP_PORT); SITES_HTTP_PORT=${SITES_HTTP_PORT:-80}
+  SITES_HTTPS_HOST=$(get_env_value SITES_HTTPS_HOST); SITES_HTTPS_HOST=${SITES_HTTPS_HOST:-0.0.0.0}
+  SITES_HTTPS_PORT=$(get_env_value SITES_HTTPS_PORT); SITES_HTTPS_PORT=${SITES_HTTPS_PORT:-443}
+  SITES_RECONCILE_INTERVAL=$(get_env_value SITES_RECONCILE_INTERVAL); SITES_RECONCILE_INTERVAL=${SITES_RECONCILE_INTERVAL:-5}
+  SITES_WORKSPACE_DIR=$(get_env_value OPENCLAW_WORKSPACE_DIR); SITES_WORKSPACE_DIR=${SITES_WORKSPACE_DIR:-/var/lib/openclaw/chloe/workspace}
+  SITES_PROXY_CONFIG_DIR=$(get_env_value OPENCLAW_SITES_PROXY_CONFIG_DIR); SITES_PROXY_CONFIG_DIR=${SITES_PROXY_CONFIG_DIR:-/etc/openclaw/sites-proxy}
+  SITES_PROXY_DATA_DIR=$(get_env_value OPENCLAW_SITES_PROXY_DATA_DIR); SITES_PROXY_DATA_DIR=${SITES_PROXY_DATA_DIR:-/var/lib/openclaw/sites-proxy/data}
+  SITES_PROXY_STORAGE_DIR=$(get_env_value OPENCLAW_SITES_PROXY_STORAGE_DIR); SITES_PROXY_STORAGE_DIR=${SITES_PROXY_STORAGE_DIR:-/var/lib/openclaw/sites-proxy/config}
+  SITES_REGISTRY_FILE="$SITES_WORKSPACE_DIR/sites/sites.json"
+}
+
+validate_sites_base_domain(){
+  python3 - "$1" <<'PY'
+import re
+import sys
+
+value = (sys.argv[1] if len(sys.argv) > 1 else "").strip().lower().rstrip(".")
+if not value:
+    raise SystemExit("Base domain cannot be empty.")
+if value.startswith("*."):
+    raise SystemExit("Enter the base domain without '*.' (example: sites.example.com).")
+if "://" in value or "/" in value:
+    raise SystemExit("Base domain must not include a scheme or path.")
+if " " in value:
+    raise SystemExit("Base domain must not contain spaces.")
+labels = value.split(".")
+if len(labels) < 2:
+    raise SystemExit("Base domain must include at least one dot.")
+label_re = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+for label in labels:
+    if not label_re.fullmatch(label):
+        raise SystemExit(f"Invalid domain label: {label}")
+print(value)
+PY
+}
+
+ensure_sites_runtime_dirs(){
+  load_sites_settings
+  mkdir -p \
+    "$SITES_WORKSPACE_DIR/sites" \
+    "$SITES_PROXY_CONFIG_DIR" \
+    "$SITES_PROXY_DATA_DIR" \
+    "$SITES_PROXY_STORAGE_DIR"
+  : > "$SITES_PROXY_CONFIG_DIR/sites.generated.caddy"
+  if [ ! -f "$SITES_REGISTRY_FILE" ]; then
+    printf '{\n  "sites": []\n}\n' > "$SITES_REGISTRY_FILE"
+  fi
+  chown -R 1000:1000 "$SITES_WORKSPACE_DIR/sites" 2>/dev/null || true
+}
+
+sites_services_running(){
+  container_running "$site_proxy_name" && container_running "$sites_reconciler_name"
+}
+
+apply_sites_services_state(){
+  load_sites_settings
+  command -v docker >/dev/null 2>&1 || return 0
+  cd "$STACK_DIR"
+  if [ "$SITES_ENABLED" = "enabled" ]; then
+    ensure_sites_runtime_dirs
+    docker compose --env-file "$ENV_FILE" -f compose.yml --profile sites up -d site-proxy sites-reconciler
+  else
+    docker compose --env-file "$ENV_FILE" -f compose.yml --profile sites stop site-proxy sites-reconciler >/dev/null 2>&1 || true
+    docker compose --env-file "$ENV_FILE" -f compose.yml --profile sites rm -f site-proxy sites-reconciler >/dev/null 2>&1 || true
+  fi
 }
 
 
@@ -985,6 +1096,8 @@ step_env(){
     ok "Env already present: $ENV_FILE"
   fi
   ensure_backup_env_defaults
+  ensure_sites_env_defaults
+  ensure_sites_runtime_dirs
   echo
   echo "Created:"
   echo "  /etc/openclaw/"
@@ -1002,6 +1115,10 @@ step_env(){
   echo "  DAILY_BACKUPS_ENABLED=$(get_env_value DAILY_BACKUPS_ENABLED)"
   echo "  DAILY_BACKUPS_DIR=$(get_env_value DAILY_BACKUPS_DIR)"
   echo "  DAILY_BACKUPS_RETENTION_COUNT=$(get_env_value DAILY_BACKUPS_RETENTION_COUNT)"
+  echo
+  echo "Sites publishing:"
+  echo "  SITES_ENABLED=$(get_env_value SITES_ENABLED)"
+  echo "  SITES_BASE_DOMAIN=$(get_env_value SITES_BASE_DOMAIN)"
 }
 
 step_browser_init(){
@@ -1191,6 +1308,100 @@ step_daily_backups(){
       load_backup_settings
       ok "Retention count updated"
       echo "  Retention count: $DAILY_BACKUPS_RETENTION_COUNT (0 = keep all)"
+      ;;
+    *)
+      warn "Invalid choice"
+      ;;
+  esac
+}
+
+step_sites_publishing(){
+  local pick new_domain normalized
+  say "Sites publishing"
+  say "Enable public subdomains for static sites in Chloe's workspace/sites."
+  if [ ! -f "$ENV_FILE" ]; then
+    warn "No env file at $ENV_FILE — run step 4 first."
+    return
+  fi
+  ensure_sites_env_defaults
+  load_sites_settings
+  echo
+  echo "Current:"
+  echo "  Enabled : $SITES_ENABLED"
+  echo "  Base domain: ${SITES_BASE_DOMAIN:-<not set>}"
+  echo "  Registry: $SITES_REGISTRY_FILE"
+  echo "  HTTP/HTTPS: ${SITES_HTTP_HOST}:${SITES_HTTP_PORT}, ${SITES_HTTPS_HOST}:${SITES_HTTPS_PORT}"
+  if sites_services_running; then
+    echo "  Services: running"
+  else
+    echo "  Services: not running"
+  fi
+  if [ -n "$SITES_BASE_DOMAIN" ]; then
+    echo "  Public pattern: https://<subdomain>.$SITES_BASE_DOMAIN"
+  fi
+  echo
+  echo "  0. Return to main menu"
+  echo "  1. Enabled"
+  echo "  2. Disabled"
+  echo "  3. Refresh services now"
+  echo
+  read -r -p "$TIGER Select [0-3]: " pick
+  case "$pick" in
+    0)
+      say "No change."
+      return
+      ;;
+    1)
+      read -r -p "$TIGER Base domain [${SITES_BASE_DOMAIN:-sites.example.com}]: " new_domain
+      new_domain=${new_domain:-${SITES_BASE_DOMAIN:-sites.example.com}}
+      if ! normalized=$(validate_sites_base_domain "$new_domain" 2>&1); then
+        warn "$normalized"
+        return
+      fi
+      set_env_value SITES_BASE_DOMAIN "$normalized"
+      set_env_value SITES_ENABLED enabled
+      ensure_sites_env_defaults
+      load_sites_settings
+      ensure_sites_runtime_dirs
+      if command -v docker >/dev/null 2>&1; then
+        if apply_sites_services_state; then
+          ok "Sites publishing enabled"
+        else
+          warn "Config saved, but starting sites services failed."
+        fi
+      else
+        ok "Sites publishing enabled"
+        warn "Docker is not installed yet — services will start after step 3 and start.sh."
+      fi
+      echo "  Base domain: $SITES_BASE_DOMAIN"
+      echo "  Registry: $SITES_REGISTRY_FILE"
+      echo "  Public pattern: https://<subdomain>.$SITES_BASE_DOMAIN"
+      echo "  Ensure wildcard DNS for *.$SITES_BASE_DOMAIN points at this VPS and ports 80/443 are open."
+      ;;
+    2)
+      set_env_value SITES_ENABLED disabled
+      load_sites_settings
+      if command -v docker >/dev/null 2>&1; then
+        apply_sites_services_state || true
+      fi
+      ok "Sites publishing disabled"
+      echo "  Existing site files and registry were kept."
+      ;;
+    3)
+      if [ "$SITES_ENABLED" != "enabled" ]; then
+        warn "Sites publishing is disabled."
+        return
+      fi
+      ensure_sites_runtime_dirs
+      if command -v docker >/dev/null 2>&1; then
+        if apply_sites_services_state; then
+          ok "Sites publishing services refreshed"
+        else
+          warn "Refreshing sites services failed"
+        fi
+      else
+        warn "Docker is not installed yet."
+      fi
       ;;
     *)
       warn "Invalid choice"
@@ -1614,6 +1825,11 @@ step_help_useful_commands(){
   echo "Daily backups:"
   echo "  sudo ./scripts/host/daily-backup.sh --force"
   echo "  grep '^DAILY_BACKUPS_' /etc/openclaw/stack.env"
+  echo
+  echo "Sites publishing:"
+  echo "  grep '^SITES_' /etc/openclaw/stack.env"
+  echo "  cat /var/lib/openclaw/chloe/workspace/sites/sites.json"
+  echo "  docker compose --env-file /etc/openclaw/stack.env -f compose.yml --profile sites ps"
 }
 
 run_step(){
@@ -1636,9 +1852,10 @@ run_step(){
     14) step_seed_instructions ;;
     15) step_guard_admin_mode ;;
     16) step_daily_backups ;;
-    17) step_verify ;;
-    18) step_help_useful_commands ;;
-    19) step_restart_all ;;
+    17) step_sites_publishing ;;
+    18) step_verify ;;
+    19) step_help_useful_commands ;;
+    20) step_restart_all ;;
     *) warn "Unknown step" ;;
   esac
   fix_repo_ownership
@@ -1688,9 +1905,10 @@ menu_once(){
   print_menu_step 14 "seed instructions"
   print_menu_step 15 "guard admin mode"
   print_menu_step 16 "daily backups"
-  print_menu_step 17 "healthcheck"
-  print_menu_step 18 "help / useful cmds"
-  print_menu_step 19 "restart all services"
+  print_menu_step 17 "sites publishing"
+  print_menu_step 18 "healthcheck"
+  print_menu_step 19 "help / useful cmds"
+  print_menu_step 20 "restart all services"
   echo
   if check_done tailscale; then
     menu_tsdns=$(tailscale_dns)
@@ -1702,10 +1920,10 @@ menu_once(){
       echo
     fi
   fi
-  read -r -p "$TIGER Select step [1-19] or 0 to exit: " pick
+  read -r -p "$TIGER Select step [1-20] or 0 to exit: " pick
   case "$pick" in
     0) say "Exiting setup wizard. See you soon."; return 1 ;;
-    1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19) run_step "$pick" ;;
+    1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20) run_step "$pick" ;;
     *) warn "Invalid choice" ;;
   esac
   return 0

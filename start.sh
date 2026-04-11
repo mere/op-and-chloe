@@ -17,6 +17,11 @@ if [ -f "$ENV_FILE" ]; then
   set +a
 fi
 
+case "${SITES_ENABLED:-disabled}" in
+  enabled|ENABLE|Enabled|true|TRUE|True|1|yes|YES|Yes|on|ON|On) SITES_ENABLED=enabled ;;
+  *) SITES_ENABLED=disabled ;;
+esac
+
 mkdir -p \
   "${OPENCLAW_WORKSPACE_DIR:-/var/lib/openclaw/chloe/workspace}/sites" \
   "${OPENCLAW_SITES_PROXY_CONFIG_DIR:-/etc/openclaw/sites-proxy}" \
@@ -30,14 +35,28 @@ bash "$STACK_DIR/scripts/host/sync-workspaces.sh"
 echo "[start] building guard and worker images (openclaw-guard-tools:local, openclaw-worker-tools:local)"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build openclaw-guard openclaw-gateway
 
-echo "[start] pulling images (browser, site proxy, sites reconciler)"
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull browser site-proxy sites-reconciler
+echo "[start] pulling images (browser)"
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull browser
+
+if [ "$SITES_ENABLED" = "enabled" ]; then
+  echo "[start] pulling images (site proxy, sites reconciler)"
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile sites pull site-proxy sites-reconciler
+fi
 
 echo "[start] bringing stack up"
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d browser openclaw-guard openclaw-gateway
+
+if [ "$SITES_ENABLED" = "enabled" ]; then
+  echo "[start] enabling sites publishing services"
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile sites up -d site-proxy sites-reconciler
+else
+  echo "[start] ensuring sites publishing services are disabled"
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile sites stop site-proxy sites-reconciler >/dev/null 2>&1 || true
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile sites rm -f site-proxy sites-reconciler >/dev/null 2>&1 || true
+fi
 
 echo "[start] container status"
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile sites ps
 
 echo "[start] warming up browser/CDP"
 sleep 10

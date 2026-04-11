@@ -28,8 +28,11 @@ else
 fi
 
 if [ -f "$ENV_FILE" ]; then
+  SITES_ENABLED=$(grep -E '^SITES_ENABLED=' "$ENV_FILE" | cut -d= -f2- | tr -d '"' | head -1)
   SITES_BASE_DOMAIN=$(grep -E '^SITES_BASE_DOMAIN=' "$ENV_FILE" | cut -d= -f2- | tr -d '"' | head -1)
-  if [ -n "${SITES_BASE_DOMAIN:-}" ]; then
+  if [ "${SITES_ENABLED:-disabled}" != "enabled" ]; then
+    echo "⚪ Sites publishing - disabled"
+  elif [ -n "${SITES_BASE_DOMAIN:-}" ]; then
     echo "✅ Sites base domain - ${SITES_BASE_DOMAIN}"
   else
     echo "⚪ Sites base domain - not configured"

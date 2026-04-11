@@ -9,4 +9,4 @@ COMPOSE_FILE=${COMPOSE_FILE:-$STACK_DIR/compose.yml}
 cd "$STACK_DIR"
 
 echo "[stop] stopping services (no volume deletion)"
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" stop
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile sites stop

@@ -195,6 +195,16 @@ Use setup step `16. daily backups` to toggle scheduled backups, run a one-off ba
 - Archive contents: `/etc/openclaw`, Chloe's `state`, and Chloe's `workspace`
 - Manual run: `sudo ./scripts/host/daily-backup.sh --force`
 
+## Sites publishing
+
+Use setup step `17. sites publishing` to enable or disable public site publishing without editing env files by hand.
+
+- Default: disabled
+- When enabled, the setup wizard asks for `SITES_BASE_DOMAIN` such as `sites.example.com`
+- The wizard creates `workspace/sites/sites.json` automatically if it is missing
+- Chloe publishes by adding entries to `workspace/sites/sites.json`
+- Existing published site files are kept when you disable the feature
+
 
 ## System diagram
 
@@ -253,6 +263,8 @@ m365 mail list --top 20
 ## Publishing sites
 
 Published sites live in Chloe's workspace under `sites/`, with one registry file at `sites/sites.json`.
+
+Use setup step `17. sites publishing` to turn the proxy on or off and set the base domain.
 
 Example:
 
