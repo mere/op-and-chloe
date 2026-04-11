@@ -63,6 +63,8 @@ Fields per entry:
 
 **URL resolution (no extra flags):** The proxy always applies a single `try_files` chain: exact path, then `{path}.html`, then `{path}/index.html`, then `{path}/`, then `/index.html`. That covers Next.js `out/`-style pages, folder indexes, and SPAs that need a root `index.html` fallback. Legacy `spa` / `html_paths` keys in JSON are ignored.
 
+**Host ops:** If extensionless URLs 404 but `*.html` works after a stack `git pull`, the `sites-reconciler` container may still be the old long-running `python … --interval` process (never reloads script from disk). Recreate it with compose (`--force-recreate sites-reconciler`) so it runs `reconciler-loop.sh` and picks up `SITES_*` from `--env-file /etc/openclaw/stack.env`.
+
 ## Workflow
 
 When asked to publish a site:
