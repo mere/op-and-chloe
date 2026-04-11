@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.4] - 2026-04-11
+
+### Added
+
+- **Sites registry `html_paths`:** Optional flag for static exports (e.g. Next.js `out/`) so Caddy uses `try_files {path} {path}.html {path}/index.html` instead of only serving literal paths. Mutually exclusive with `spa`.
+
+### Changed
+
+- **Docs / opch-sites skill:** Clarify `spa` (single `index.html` fallback) vs `html_paths` (extensionless HTML / multi-page export).
+
+[0.8.4]: https://github.com/mere/op-and-chloe/compare/v0.8.3...v0.8.4
+
 ## [0.8.3] - 2026-04-11
 
 ### Added

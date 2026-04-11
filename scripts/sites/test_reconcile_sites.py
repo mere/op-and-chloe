@@ -98,12 +98,46 @@ class ReconcileSitesValidationTests(unittest.TestCase):
             domain="h.example.com",
             root=Path("/srv/x"),
             spa=False,
+            html_paths=False,
             basicauth=("u-ser_1", _SAMPLE_BCRYPT),
         )
         out = reconcile_sites.render_sites([site], [], "example.com")
         self.assertIn("basic_auth", out)
         self.assertIn(_SAMPLE_BCRYPT, out)
         self.assertIn('"u-ser_1"', out)
+
+    def test_render_html_paths_try_files(self) -> None:
+        site = reconcile_sites.PublishedSite(
+            name="web",
+            subdomain="www",
+            domain="www.example.com",
+            root=Path("/srv/out"),
+            spa=False,
+            html_paths=True,
+            basicauth=None,
+        )
+        out = reconcile_sites.render_sites([site], [], "example.com")
+        self.assertIn("try_files {path} {path}.html {path}/index.html", out)
+        self.assertNotIn("try_files {path} {path}/ /index.html", out)
+
+    def test_rejects_spa_and_html_paths_together(self) -> None:
+        self.make_site_dir("app/out")
+        (self.sites_dir / "app/out/index.html").write_text("<h1>x</h1>")
+        registry = {
+            "sites": [
+                {
+                    "name": "app",
+                    "subdomain": "app",
+                    "root": "app/out",
+                    "spa": True,
+                    "html_paths": True,
+                }
+            ]
+        }
+        (self.sites_dir / "sites.json").write_text(json.dumps(registry))
+        published, notes = reconcile_sites.scan_sites(self.workspace, "example.com")
+        self.assertEqual(published, [])
+        self.assertTrue(any("both be true" in n for n in notes))
 
 
 if __name__ == "__main__":

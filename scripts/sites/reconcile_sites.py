@@ -28,6 +28,7 @@ class PublishedSite:
     domain: str
     root: Path
     spa: bool
+    html_paths: bool
     basicauth: tuple[str, str] | None = None
 
 
@@ -157,6 +158,12 @@ def validate_site(entry: object, sites_dir: Path, base_domain: str) -> Published
     if not isinstance(spa, bool):
         raise ValueError('"spa" must be true or false when provided')
 
+    html_paths = entry.get("html_paths", False)
+    if not isinstance(html_paths, bool):
+        raise ValueError('"html_paths" must be true or false when provided')
+    if spa and html_paths:
+        raise ValueError('"spa" and "html_paths" cannot both be true (pick one routing style)')
+
     root = validate_relative_dir(sites_dir, entry.get("root"))
     validate_no_symlinks(root)
     domain = f"{subdomain}.{base_domain}"
@@ -168,6 +175,7 @@ def validate_site(entry: object, sites_dir: Path, base_domain: str) -> Published
         domain=domain,
         root=root,
         spa=spa,
+        html_paths=html_paths,
         basicauth=basicauth,
     )
 
@@ -262,6 +270,8 @@ def render_sites(published: list[PublishedSite], notes: list[str], base_domain: 
             lines.append("  }")
         if site.spa:
             lines.append("  try_files {path} {path}/ /index.html")
+        elif site.html_paths:
+            lines.append("  try_files {path} {path}.html {path}/index.html")
         lines.append("  file_server")
         lines.append("}")
         lines.append("")

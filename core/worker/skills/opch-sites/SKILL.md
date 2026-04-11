@@ -58,7 +58,8 @@ Fields per entry:
 - `name`: required, human-readable unique label for the site entry.
 - `subdomain`: required, lowercase letters/numbers/hyphens only. The public hostname becomes `<subdomain>.<base-domain>`.
 - `root`: required, directory path relative to `sites/`. It must point to a subdirectory, not `sites/` itself.
-- `spa`: optional. Set `true` for single-page apps that should fall back to `index.html`.
+- `spa`: optional. Set `true` only for **single-page apps** (React/Vue router, etc.): missing paths fall back to `/index.html` so the client router can run. **Do not** use this for Next.js static export (`out/`) or other multi-page sites that emit `blog.html` for `/blog`.
+- `html_paths`: optional. Set `true` for **static exports** where clean URLs map to files on disk, e.g. Next.js `out/` (`/blog` → `blog.html` or `blog/index.html`), Eleventy, Jekyll-style output. Mutually exclusive with `spa`.
 - `basicauth`: optional. When set, the proxy requires HTTP Basic Auth for that site only. Must be an object with `user` (login name) and `bcrypt` (bcrypt modular-crypt hash). Generate the hash **inside the worker** with Python — no Docker or Caddy required:  
   `printf '%s' 'YOUR_PASSWORD' | python3 /opt/op-and-chloe/scripts/sites/hash_site_password.py`  
   Paste the printed line into `bcrypt`. Prefer stdin so the password does not appear in shell history or `ps`. Never put a plaintext password in `sites.json`.
@@ -69,7 +70,7 @@ When asked to publish a site:
 
 1. Create or update the site under `sites/<site-name>/` or another nested folder inside `sites/`.
 2. Put the built static output in a directory inside `sites/`, such as `marketing/dist` or `docs/build`.
-3. Update `sites/sites.json` with a unique `name`, `subdomain`, and `root`.
+3. Update `sites/sites.json` with a unique `name`, `subdomain`, and `root`. For Next.js `next export` / `out`, set `"html_paths": true`. For a client-only SPA served as a single `index.html`, set `"spa": true` instead — never both.
 4. If the user wants a shared login for that site only, add `basicauth` with `user` and `bcrypt`. Generate `bcrypt` with `python3 /opt/op-and-chloe/scripts/sites/hash_site_password.py` (pipe the password on stdin; see script docstring). Never write a plaintext password into the registry.
 5. Tell the user the expected URL: `https://<subdomain>.<base-domain>`.
 
