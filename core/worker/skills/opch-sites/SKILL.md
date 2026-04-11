@@ -59,7 +59,9 @@ Fields per entry:
 - `subdomain`: required, lowercase letters/numbers/hyphens only. The public hostname becomes `<subdomain>.<base-domain>`.
 - `root`: required, directory path relative to `sites/`. It must point to a subdirectory, not `sites/` itself.
 - `spa`: optional. Set `true` for single-page apps that should fall back to `index.html`.
-- `basicauth`: optional. When set, the proxy requires HTTP Basic Auth for that site only. Must be an object with `user` (login name) and `bcrypt` (bcrypt modular-crypt hash from `caddy hash-password` on the `site-proxy` host). Never put a plaintext password in `sites.json`.
+- `basicauth`: optional. When set, the proxy requires HTTP Basic Auth for that site only. Must be an object with `user` (login name) and `bcrypt` (bcrypt modular-crypt hash). Generate the hash **inside the worker** with Python — no Docker or Caddy required:  
+  `printf '%s' 'YOUR_PASSWORD' | python3 /opt/op-and-chloe/scripts/sites/hash_site_password.py`  
+  Paste the printed line into `bcrypt`. Prefer stdin so the password does not appear in shell history or `ps`. Never put a plaintext password in `sites.json`.
 
 ## Workflow
 
@@ -68,7 +70,7 @@ When asked to publish a site:
 1. Create or update the site under `sites/<site-name>/` or another nested folder inside `sites/`.
 2. Put the built static output in a directory inside `sites/`, such as `marketing/dist` or `docs/build`.
 3. Update `sites/sites.json` with a unique `name`, `subdomain`, and `root`.
-4. If the user wants a shared login for that site only, add `basicauth` with `user` and `bcrypt`. Obtain the hash on the host with `caddy hash-password` (e.g. `docker compose --profile sites exec site-proxy caddy hash-password` from the stack directory). Never write a plaintext password into the registry.
+4. If the user wants a shared login for that site only, add `basicauth` with `user` and `bcrypt`. Generate `bcrypt` with `python3 /opt/op-and-chloe/scripts/sites/hash_site_password.py` (pipe the password on stdin; see script docstring). Never write a plaintext password into the registry.
 5. Tell the user the expected URL: `https://<subdomain>.<base-domain>`.
 
 ## Access and authentication

@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.3] - 2026-04-11
+
+### Added
+
+- **`scripts/sites/hash_site_password.py`:** Chloe can generate bcrypt hashes for `sites.json` `basicauth` inside the worker with Python (stdin or argv); no Docker or Caddy on the worker.
+- **Worker image:** `python3-bcrypt` (Debian package) so the hash script runs in `openclaw-worker-tools`.
+
+### Changed
+
+- **Docs / opch-sites skill:** Basic Auth instructions prefer the hash script; optional `caddy hash-password` on the host remains documented.
+
+[0.8.3]: https://github.com/mere/op-and-chloe/compare/v0.8.2...v0.8.3
+
 ## [0.8.2] - 2026-04-11
 
 ### Fixed

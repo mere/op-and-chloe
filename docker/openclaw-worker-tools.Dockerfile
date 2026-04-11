@@ -10,7 +10,16 @@ ARG TARGETARCH
 ARG HIMALAYA_VERSION=v1.1.0
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates curl python3 python3-venv unzip \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      ffmpeg \
+      jq \
+      python3 \
+      python3-bcrypt \
+      python3-pip \
+      python3-venv \
+      unzip \
  && rm -rf /var/lib/apt/lists/*
 
 # Bun (install to a global path so USER node sees it on PATH)
