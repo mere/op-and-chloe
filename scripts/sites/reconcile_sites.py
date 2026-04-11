@@ -254,14 +254,19 @@ def render_sites(published: list[PublishedSite], notes: list[str], base_domain: 
             lines.append("  basic_auth {")
             lines.append(f"    {quote(user)} {quote(bcrypt_hash)}")
             lines.append("  }")
+        # route{} fixes handler order across Caddy versions: uri → try_files → file_server. Without it,
+        # the Caddyfile adapter can reorder uri after try_files, so /blog never rewrites to blog.html
+        # (empty-body404 from file_server while /blog.html still works).
+        lines.append("  route {")
         # Strip trailing slash (except bare /) so /blog/ becomes /blog and {path}.html finds blog.html.
-        lines.append("  @strip_slash path_regexp trailing ^/(.+)/$")
-        lines.append("  uri @strip_slash strip_suffix /")
+        lines.append("    @strip_slash path_regexp trailing ^/(.+)/$")
+        lines.append("    uri @strip_slash strip_suffix /")
         # One chain: real files, extensionless .html, directory index, SPA fallback to /index.html.
         lines.append(
-            "  try_files {path} {path}.html {path}/index.html {path}/ /index.html"
+            "    try_files {path} {path}.html {path}/index.html {path}/ /index.html"
         )
-        lines.append("  file_server")
+        lines.append("    file_server")
+        lines.append("  }")
         lines.append("}")
         lines.append("")
 

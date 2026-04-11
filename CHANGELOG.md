@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.8] - 2026-04-11
+
+### Fixed
+
+- **Sites proxy:** Wrap `uri`, `try_files`, and `file_server` in a `route { }` block so the Caddyfile adapter cannot run `try_files` before the trailing-slash `uri` rewrite. Symptom when broken: `/blog` and `/blog/` return **empty-body 404** from Caddy while `/blog.html` still returns 200.
+
+### Added
+
+- **`scripts/sites/smoke_static_site_caddy.sh`:** Docker smoke test (HTTPS + internal TLS) that curls `/blog` and `/blog/` against the generated Caddy fragment.
+
+[0.8.8]: https://github.com/mere/op-and-chloe/compare/v0.8.7...v0.8.8
+
 ## [0.8.7] - 2026-04-11
 
 ### Fixed

@@ -113,12 +113,14 @@ class ReconcileSitesValidationTests(unittest.TestCase):
             basicauth=None,
         )
         out = reconcile_sites.render_sites([site], [], "example.com")
-        self.assertIn("@strip_slash path_regexp trailing ^/(.+)/$", out)
-        self.assertIn("uri @strip_slash strip_suffix /", out)
+        self.assertIn("route {", out)
+        self.assertIn("    @strip_slash path_regexp trailing ^/(.+)/$", out)
+        self.assertIn("    uri @strip_slash strip_suffix /", out)
         self.assertIn(
-            "try_files {path} {path}.html {path}/index.html {path}/ /index.html",
+            "    try_files {path} {path}.html {path}/index.html {path}/ /index.html",
             out,
         )
+        self.assertIn("    file_server", out)
 
     def test_legacy_spa_and_html_paths_keys_ignored(self) -> None:
         self.make_site_dir("app/out")
@@ -139,9 +141,10 @@ class ReconcileSitesValidationTests(unittest.TestCase):
         self.assertEqual(len(notes), 0, notes)
         self.assertEqual(len(published), 1)
         out = reconcile_sites.render_sites(published, [], "example.com")
-        self.assertIn("uri @strip_slash strip_suffix /", out)
+        self.assertIn("route {", out)
+        self.assertIn("    uri @strip_slash strip_suffix /", out)
         self.assertIn(
-            "try_files {path} {path}.html {path}/index.html {path}/ /index.html",
+            "    try_files {path} {path}.html {path}/index.html {path}/ /index.html",
             out,
         )
 
