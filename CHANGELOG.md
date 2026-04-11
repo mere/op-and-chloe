@@ -4,11 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.5] - 2026-04-11
+
+### Changed
+
+- **Sites proxy:** Every published site now uses one default `try_files` chain: `{path}`, `{path}.html`, `{path}/index.html`, `{path}/`, then `/index.html` — covers Next.js `out/`-style paths, directory indexes, and SPA fallback without `spa` or `html_paths` registry flags (those keys are ignored if still present).
+
+[0.8.5]: https://github.com/mere/op-and-chloe/compare/v0.8.4...v0.8.5
+
 ## [0.8.4] - 2026-04-11
 
 ### Added
 
-- **Sites registry `html_paths`:** Optional flag for static exports (e.g. Next.js `out/`) so Caddy uses `try_files {path} {path}.html {path}/index.html` instead of only serving literal paths. Mutually exclusive with `spa`.
+- **Sites registry `html_paths`:** Optional flag for static exports (e.g. Next.js `out/`) so Caddy uses `try_files {path} {path}.html {path}/index.html` instead of only serving literal paths. Mutually exclusive with `spa`. **Superseded in 0.8.5** by the default chain for all sites.
 
 ### Changed
 

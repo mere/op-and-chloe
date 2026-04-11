@@ -287,26 +287,18 @@ sites/
     {
       "name": "hello",
       "subdomain": "hello",
-      "root": "hello/dist",
-      "spa": true
+      "root": "hello/dist"
     },
     {
       "name": "docs",
       "subdomain": "docs",
       "root": "docs/build"
-    },
-    {
-      "name": "web",
-      "subdomain": "www",
-      "root": "web/out",
-      "html_paths": true
     }
   ]
 }
 ```
 
-- **`spa`:** use for a true SPA — URLs fall back to `/index.html` for client-side routing.
-- **`html_paths`:** use for static site generators / **Next.js `out`**, where `/page` should serve `page.html` or `page/index.html`. Do not set both `spa` and `html_paths` on the same entry.
+- **Clean URLs:** The proxy resolves `{path}`, then `{path}.html`, then `{path}/index.html`, then `{path}/`, then `/index.html` (covers static exports like Next.js `out/`, folder indexes, and SPA fallback). No `spa` / `html_paths` flags.
 
 - Set `SITES_BASE_DOMAIN` in `/etc/openclaw/stack.env`, for example `sites.example.com`.
 - Point wildcard DNS such as `*.sites.example.com` at the VPS.
