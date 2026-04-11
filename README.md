@@ -343,7 +343,7 @@ To limit who can view a site:
 5. Ensure the published tree does not contain symlinks
 6. Check the `site-proxy` and `sites-reconciler` containers with `docker compose ps`
 
-**Published site returns 404 for extensionless URLs (`/blog`) but `blog.html` works, right after changing `reconcile_sites.py`:**  
+**Published site returns 404 for extensionless URLs (`/blog`, `/blog/`) but `blog.html` works, right after changing `reconcile_sites.py`:**  
 The `sites-reconciler` container must pick up the new script. Recreate it (or run `start.sh` after `git pull`):  
 `docker compose --env-file /etc/openclaw/stack.env -f compose.yml --profile sites up -d --force-recreate sites-reconciler`  
 The stack uses a shell loop so each reconcile runs a **fresh** Python process and sees the latest mounted repo code.

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.7] - 2026-04-11
+
+### Fixed
+
+- **Sites proxy:** Extensionless HTML for URLs with a trailing slash (e.g. `/blog/` → `blog.html`). Without normalizing the path, `{path}.html` was `/blog/.html` and never matched.
+
+[0.8.7]: https://github.com/mere/op-and-chloe/compare/v0.8.6...v0.8.7
+
 ## [0.8.6] - 2026-04-11
 
 ### Fixed

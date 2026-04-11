@@ -254,6 +254,9 @@ def render_sites(published: list[PublishedSite], notes: list[str], base_domain: 
             lines.append("  basic_auth {")
             lines.append(f"    {quote(user)} {quote(bcrypt_hash)}")
             lines.append("  }")
+        # Strip trailing slash (except bare /) so /blog/ becomes /blog and {path}.html finds blog.html.
+        lines.append("  @strip_slash path_regexp trailing ^/(.+)/$")
+        lines.append("  uri @strip_slash strip_suffix /")
         # One chain: real files, extensionless .html, directory index, SPA fallback to /index.html.
         lines.append(
             "  try_files {path} {path}.html {path}/index.html {path}/ /index.html"
