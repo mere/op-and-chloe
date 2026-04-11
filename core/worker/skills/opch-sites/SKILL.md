@@ -43,7 +43,11 @@ Create `sites/sites.json`:
     {
       "name": "docs",
       "subdomain": "docs",
-      "root": "docs/build"
+      "root": "docs/build",
+      "basicauth": {
+        "user": "preview",
+        "bcrypt": "$2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG"
+      }
     }
   ]
 }
@@ -55,6 +59,7 @@ Fields per entry:
 - `subdomain`: required, lowercase letters/numbers/hyphens only. The public hostname becomes `<subdomain>.<base-domain>`.
 - `root`: required, directory path relative to `sites/`. It must point to a subdirectory, not `sites/` itself.
 - `spa`: optional. Set `true` for single-page apps that should fall back to `index.html`.
+- `basicauth`: optional. When set, the proxy requires HTTP Basic Auth for that site only. Must be an object with `user` (login name) and `bcrypt` (bcrypt modular-crypt hash from `caddy hash-password` on the `site-proxy` host). Never put a plaintext password in `sites.json`.
 
 ## Workflow
 
@@ -63,11 +68,12 @@ When asked to publish a site:
 1. Create or update the site under `sites/<site-name>/` or another nested folder inside `sites/`.
 2. Put the built static output in a directory inside `sites/`, such as `marketing/dist` or `docs/build`.
 3. Update `sites/sites.json` with a unique `name`, `subdomain`, and `root`.
-4. Tell the user the expected URL: `https://<subdomain>.<base-domain>`.
+4. If the user wants a shared login for that site only, add `basicauth` with `user` and `bcrypt`. Obtain the hash on the host with `caddy hash-password` (e.g. `docker compose --profile sites exec site-proxy caddy hash-password` from the stack directory). Never write a plaintext password into the registry.
+5. Tell the user the expected URL: `https://<subdomain>.<base-domain>`.
 
 ## Access and authentication
 
-Published sites are **public by default** (anyone with the link). For private or sensitive work: keep publishing off, unpublish by removing the registry entry, or build login inside the app (OAuth, magic links, etc.). A future stack option is **HTTP Basic Auth** in the proxy (bcrypt hashes in config/registry, not plaintext passwords).
+Published sites are **public by default** (anyone with the link). For private or sensitive work: keep publishing off, unpublish by removing the registry entry, add optional **`basicauth`** on that site’s registry entry (bcrypt hash only), or build login inside the app (OAuth, magic links, etc.).
 
 ## Rules
 

@@ -315,7 +315,7 @@ To limit who can view a site:
 
 1. **Leave sites publishing disabled** in setup until you are ready to go public, or remove the entry from `sites/sites.json` to take a site down without disabling the whole feature.
 2. **App-level auth** — For SPAs and mini-apps, add your own sign-in (OAuth, magic links, etc.) in the front end or a small backend you deploy separately. The stack only serves static files from `sites/`.
-3. **HTTP Basic Auth (not wired yet)** — A natural next step is optional Caddy `basicauth` for either one shared login for all published sites or per-site credentials in the registry, storing **bcrypt hashes** only (no plaintext passwords on disk). Ask in the repo if you need this implemented.
+3. **HTTP Basic Auth (per site)** — Optional `basicauth` on each entry in `sites/sites.json`: set `user` and `bcrypt` (a modular-crypt hash from `caddy hash-password`, e.g. on the host: `docker compose --profile sites exec site-proxy caddy hash-password`). Only the hash is stored in the registry — never a plaintext password.
 
 ## Troubleshooting
 

@@ -15,6 +15,10 @@ from tempfile import NamedTemporaryFile
 
 
 SUBDOMAIN_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+# Modular-crypt bcrypt (e.g. from `caddy hash-password`); 22-char salt + 31-char digest after cost.
+# $2a/$2b/$2y are common; $2x is legacy but same length.
+BCRYPT_HASH_RE = re.compile(r"^\$2[abxy]\$\d{2}\$[./A-Za-z0-9]{53}$")
+BASICAUTH_KEYS = frozenset({"user", "bcrypt"})
 
 
 @dataclass(frozen=True)
@@ -24,6 +28,7 @@ class PublishedSite:
     domain: str
     root: Path
     spa: bool
+    basicauth: tuple[str, str] | None = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -88,6 +93,34 @@ def validate_relative_dir(sites_dir: Path, value: object) -> Path:
     return resolved
 
 
+def parse_basicauth(entry: dict[str, object]) -> tuple[str, str] | None:
+    """Return (username, bcrypt_hash) or None if the site has no basic_auth block."""
+    raw = entry.get("basicauth")
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ValueError('"basicauth" must be a JSON object with "user" and "bcrypt"')
+    unknown = set(raw) - BASICAUTH_KEYS
+    if unknown:
+        bad = ", ".join(sorted(unknown))
+        raise ValueError(f'"basicauth" has unknown keys: {bad}')
+    user = raw.get("user")
+    bcrypt_hash = raw.get("bcrypt")
+    if not isinstance(user, str) or not user.strip():
+        raise ValueError('"basicauth.user" must be a non-empty string')
+    if not isinstance(bcrypt_hash, str) or not bcrypt_hash.strip():
+        raise ValueError('"basicauth.bcrypt" must be a non-empty string')
+    user = user.strip()
+    bcrypt_hash = bcrypt_hash.strip()
+    if not BCRYPT_HASH_RE.fullmatch(bcrypt_hash):
+        raise ValueError(
+            '"basicauth.bcrypt" must be a bcrypt hash (run `caddy hash-password` on the proxy host)'
+        )
+    if len(user) > 256:
+        raise ValueError('"basicauth.user" is too long')
+    return (user, bcrypt_hash)
+
+
 def validate_no_symlinks(root: Path) -> None:
     if root.is_symlink():
         raise ValueError(f'"root" must not be a symlink: {root.name}')
@@ -127,6 +160,7 @@ def validate_site(entry: object, sites_dir: Path, base_domain: str) -> Published
     root = validate_relative_dir(sites_dir, entry.get("root"))
     validate_no_symlinks(root)
     domain = f"{subdomain}.{base_domain}"
+    basicauth = parse_basicauth(entry)
 
     return PublishedSite(
         name=name,
@@ -134,6 +168,7 @@ def validate_site(entry: object, sites_dir: Path, base_domain: str) -> Published
         domain=domain,
         root=root,
         spa=spa,
+        basicauth=basicauth,
     )
 
 
@@ -220,6 +255,11 @@ def render_sites(published: list[PublishedSite], notes: list[str], base_domain: 
         lines.append(f"{site.domain} {{")
         lines.append(f"  root * {quote(str(site.root))}")
         lines.append("  encode zstd gzip")
+        if site.basicauth is not None:
+            user, bcrypt_hash = site.basicauth
+            lines.append("  basic_auth {")
+            lines.append(f"    {quote(user)} {quote(bcrypt_hash)}")
+            lines.append("  }")
         if site.spa:
             lines.append("  try_files {path} {path}/ /index.html")
         lines.append("  file_server")

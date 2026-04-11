@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.0] - 2026-04-11
+
+### Added
+
+- **Per-site HTTP Basic Auth:** Optional `basicauth` on each entry in `workspace/sites/sites.json` (`user` and `bcrypt` — a bcrypt modular-crypt hash only, never plaintext). `scripts/sites/reconcile_sites.py` validates the hash and emits Caddy `basic_auth` for that host only.
+
+### Changed
+
+- **Sites publishing UX:** Setup wizard copy for public access and Basic Auth was tightened (no awkward “today” phrasing; points at `basicauth.user` / `basicauth.bcrypt` and `caddy hash-password`).
+- **Docs:** README and **opch-sites** skill describe the registry fields and how to generate hashes on `site-proxy`.
+
+[0.8.0]: https://github.com/mere/op-and-chloe/compare/v0.7.2...v0.8.0
+
 ## [0.7.2] - 2026-04-11
 
 ### Changed
