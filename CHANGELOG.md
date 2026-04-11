@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.6] - 2026-04-11
+
+### Fixed
+
+- **Sites reconciler:** Run reconcile via `scripts/sites/reconciler-loop.sh` so each poll uses a new Python process. The previous long-lived `python … --interval N` process kept **stale in-memory code** after `git pull`, overwriting `sites.generated.caddy` with old output (e.g. missing `try_files`) until the container was recreated.
+
+### Changed
+
+- **README:** Note to recreate `sites-reconciler` when site routing behavior looks stuck after a repo update.
+
+[0.8.6]: https://github.com/mere/op-and-chloe/compare/v0.8.5...v0.8.6
+
 ## [0.8.5] - 2026-04-11
 
 ### Changed

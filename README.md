@@ -343,6 +343,11 @@ To limit who can view a site:
 5. Ensure the published tree does not contain symlinks
 6. Check the `site-proxy` and `sites-reconciler` containers with `docker compose ps`
 
+**Published site returns 404 for extensionless URLs (`/blog`) but `blog.html` works, right after changing `reconcile_sites.py`:**  
+The `sites-reconciler` container must pick up the new script. Recreate it (or run `start.sh` after `git pull`):  
+`docker compose --env-file /etc/openclaw/stack.env -f compose.yml --profile sites up -d --force-recreate sites-reconciler`  
+The stack uses a shell loop so each reconcile runs a **fresh** Python process and sees the latest mounted repo code.
+
 **`site-proxy` fails to start: `bind ... 0.0.0.0:443: address already in use` (or nothing listens on public :80/:443):**
 - Tailscale often binds HTTPS on the tailnet interface (`tailscaled` on `100.x.x.x:443`). That blocks Docker from publishing `0.0.0.0:443` for Caddy even though your public IP looks free.
 - Set `SITES_HTTP_HOST` and `SITES_HTTPS_HOST` in `/etc/openclaw/stack.env` to your VPS’s **public IPv4** (the address wildcard DNS should use), then recreate the proxy:  
