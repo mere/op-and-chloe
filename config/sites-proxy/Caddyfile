@@ -1,1 +1,1 @@
-import /etc/caddy/sites.generated.caddy
+import /etc/caddy/sites-registry/sites.generated.caddy

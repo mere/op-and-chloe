@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.2] - 2026-04-11
+
+### Fixed
+
+- **Sites proxy bind mount:** `site-proxy` now mounts the whole `sites-proxy` config directory at `/etc/caddy/sites-registry` and imports `sites.generated.caddy` from there. Bind-mounting only the file broke after the reconciler atomically replaced it (Docker left Caddy on an empty/stale inode, so logs showed `Import file is empty` and nothing listened on :80/:443 until the container was restarted).
+
+### Changed
+
+- **README:** Troubleshooting for the stale `sites.generated.caddy` mount and `force-recreate site-proxy`.
+
+[0.8.2]: https://github.com/mere/op-and-chloe/compare/v0.8.1...v0.8.2
+
 ## [0.8.1] - 2026-04-11
 
 ### Changed

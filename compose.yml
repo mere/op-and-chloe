@@ -29,7 +29,9 @@ services:
       - "${SITES_HTTPS_HOST:-0.0.0.0}:${SITES_HTTPS_PORT:-443}:443"
     volumes:
       - ${OPENCLAW_WORKSPACE_DIR:-/var/lib/openclaw/chloe/workspace}:/srv/chloe-workspace:ro
-      - ${OPENCLAW_SITES_PROXY_CONFIG_DIR:-/etc/openclaw/sites-proxy}/sites.generated.caddy:/etc/caddy/sites.generated.caddy
+      # Mount the directory (not the file alone): reconciler replaces sites.generated.caddy atomically;
+      # a single-file bind can leave Caddy seeing a stale/empty inode until the container is recreated.
+      - ${OPENCLAW_SITES_PROXY_CONFIG_DIR:-/etc/openclaw/sites-proxy}:/etc/caddy/sites-registry:ro
       - ${OPENCLAW_SITES_PROXY_DATA_DIR:-/var/lib/openclaw/sites-proxy/data}:/data
       - ${OPENCLAW_SITES_PROXY_STORAGE_DIR:-/var/lib/openclaw/sites-proxy/config}:/config
       - ${OPENCLAW_STACK_DIR:-/opt/op-and-chloe}/config/sites-proxy/Caddyfile:/etc/caddy/Caddyfile:ro

@@ -348,6 +348,10 @@ To limit who can view a site:
   `docker compose --env-file /etc/openclaw/stack.env -f compose.yml --profile sites up -d site-proxy`  
   (from your stack directory, e.g. where you cloned this repo).
 
+**`site-proxy` logs `Import file is empty`, or HTTPS only works after restarting `site-proxy`:**  
+If `sites.generated.caddy` on the host has content but Caddy inside the container sees an empty file, you likely have an old **single-file** bind mount. The reconciler replaces that file atomically; Docker can leave the container on a stale inode. Use the current `compose.yml` (directory mount at `/etc/caddy/sites-registry/`) and recreate:  
+`docker compose --env-file /etc/openclaw/stack.env -f compose.yml --profile sites up -d --force-recreate site-proxy`
+
 ## Security model
 
 - **No master password on disk:** In setup step 6 you log in and unlock once; only `BW_SERVER` and the session key are saved (worker state: `state/secrets/bitwarden.env`, `state/secrets/bw-session`). Chloe uses that session via **`bw`**; re-run step 6 if the vault is locked.
