@@ -100,7 +100,7 @@ step_status(){
     12) configured_label guard ;;
     13) configured_label worker ;;
     14) check_seed_done && echo "✅ Seeded" || echo "⚪ Not seeded" ;;
-    15) guard_admin_mode_enabled && echo "⚠️ Enabled (gives guard full VPS access — disable when not needed)" || echo "⚪ Disabled" ;;
+    15) guard_admin_mode_enabled && echo "✅ Enabled" || echo "⚪ Disabled" ;;
     16)
       if [ ! -f "$ENV_FILE" ]; then
         echo "⚪ Configure env first"
@@ -1320,7 +1320,7 @@ step_sites_publishing(){
   say "Sites publishing"
   echo
   echo "┌─────────────────────────────────────────────────────────┐"
-  echo "│ 🌐 Sites publishing                                      │"
+  echo "│ 🌐 Sites publishing                                     │"
   echo "│                                                         │"
   echo "│ Chloe can publish what she builds under                 │"
   echo "│ workspace/sites/ — each entry in sites/sites.json       │"
@@ -1328,11 +1328,14 @@ step_sites_publishing(){
   echo "│ landing pages, mini-apps, forms, experiments,           │"
   echo "│ interactive reports, analysis pages, and more.          │"
   echo "│                                                         │"
+  echo "│ DNS: *.your-base-domain → this host (A or AAAA record). │"
+  echo "│ Expose TCP 80 & 443 inbound for HTTPS and certificates. │"
+  echo "│                                                         │"
   echo "│ A reverse proxy serves static files only; Chloe         │"
   echo "│ does not edit proxy config — only the registry and      │"
   echo "│ the files under sites/.                                 │"
   echo "│                                                         │"
-  echo "│ 🔒 Who can see it?                                       │"
+  echo "│ 🔒 Who can see it?                                      │"
   echo "│                                                         │"
   echo "│ With publishing on, each site is world-readable —       │"
   echo "│ anyone with the link can open it (like a public blog).  │"

@@ -8,9 +8,11 @@ When the user types `LOGTHIS` in the chat, create a changelog entry summarizing 
 
 ## What to Do
 
-1. **Respond with**: "🫡 MiniSpec: CREATING CHANGELOG! 🫡"
-2. **Summarize** session achievements
-3. **Update** CHANGELOG.md with Common Changelog format
+1. **Review**: First, review your changes. Find any issues and fix them. Keep iterating until all issues in your changes are fixed.
+2. **Document**: Make sure your changes are documented in the code, README, etc.
+3. **Respond with**: "🫡 MiniSpec: CREATING CHANGELOG! 🫡"
+4. **Summarize** session achievements
+5. **Update** CHANGELOG.md with Common Changelog format
 
 Create changelog entry summarizing completed implementation.
 

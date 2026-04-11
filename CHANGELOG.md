@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.1] - 2026-04-11
+
+### Changed
+
+- **Setup wizard:** Guard admin mode menu line uses short **Enabled** / **Disabled** status (✅ / ⚪) so the column aligns; full warnings stay in that step’s submenu.
+- **Sites publishing callout:** Framed help now includes wildcard DNS (A/AAAA) and inbound TCP 80/443; emoji rows use narrower padding so box borders line up in common terminals.
+- **Docs:** README troubleshooting explains **`site-proxy` / `0.0.0.0:443` already in use** when Tailscale holds port 443 on the tailnet IP, and documents binding `SITES_HTTP_HOST` / `SITES_HTTPS_HOST` to the VPS public IPv4; `config/env.example` notes the same for `SITES_*` publish addresses.
+- **Cursor:** `logthis` command adds an explicit review/document step and fixes the **Document** step label.
+
+[0.8.1]: https://github.com/mere/op-and-chloe/compare/v0.8.0...v0.8.1
+
 ## [0.8.0] - 2026-04-11
 
 ### Added
