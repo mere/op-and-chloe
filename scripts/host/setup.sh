@@ -1318,7 +1318,35 @@ step_daily_backups(){
 step_sites_publishing(){
   local pick new_domain normalized
   say "Sites publishing"
-  say "Enable public subdomains for static sites in Chloe's workspace/sites."
+  echo
+  echo "┌─────────────────────────────────────────────────────────┐"
+  echo "│ 🌐 Sites publishing                                      │"
+  echo "│                                                         │"
+  echo "│ Chloe can publish what she builds under                 │"
+  echo "│ workspace/sites/ — each entry in sites/sites.json       │"
+  echo "│ becomes its own public HTTPS URL on your domain:        │"
+  echo "│ landing pages, mini-apps, forms, experiments,           │"
+  echo "│ interactive reports, analysis pages, and more.          │"
+  echo "│                                                         │"
+  echo "│ A reverse proxy serves static files only; Chloe         │"
+  echo "│ does not edit proxy config — only the registry and      │"
+  echo "│ the files under sites/.                                 │"
+  echo "│                                                         │"
+  echo "│ 🔒 Who can see it?                                       │"
+  echo "│                                                         │"
+  echo "│ Today: enabled sites are world-readable — anyone        │"
+  echo "│ who knows the URL can open them (like a public blog).   │"
+  echo "│ For drafts or sensitive demos: leave publishing         │"
+  echo "│ disabled here, or build login inside the app            │"
+  echo "│ (OAuth, magic links, etc.).                             │"
+  echo "│                                                         │"
+  echo "│ Optional hardening we can add next: HTTP Basic Auth     │"
+  echo "│ in Caddy — one shared login for all published sites     │"
+  echo "│ or per-site credentials in the registry (bcrypt         │"
+  echo "│ hashes only; no plaintext passwords on disk).           │"
+  echo "└─────────────────────────────────────────────────────────┘"
+  echo
+
   if [ ! -f "$ENV_FILE" ]; then
     warn "No env file at $ENV_FILE — run step 4 first."
     return

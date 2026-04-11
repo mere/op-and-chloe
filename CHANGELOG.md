@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.7.2] - 2026-04-11
+
+### Changed
+
+- **Sites publishing UX:** The setup wizard `sites publishing` step now shows a framed summary of what Chloe can publish (registry-driven URLs, static-only proxy) and explains public-by-default access plus optional future HTTP Basic Auth in Caddy (bcrypt-only on disk).
+- **Docs:** README adds a **Public access and passwords** subsection; **opch-sites** skill adds **Access and authentication** aligned with the same guidance.
+
+[0.7.2]: https://github.com/mere/op-and-chloe/compare/v0.7.1...v0.7.2
+
 ## [0.7.1] - 2026-04-10
 
 ### Added

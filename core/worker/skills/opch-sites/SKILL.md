@@ -65,6 +65,10 @@ When asked to publish a site:
 3. Update `sites/sites.json` with a unique `name`, `subdomain`, and `root`.
 4. Tell the user the expected URL: `https://<subdomain>.<base-domain>`.
 
+## Access and authentication
+
+Published sites are **public by default** (anyone with the link). For private or sensitive work: keep publishing off, unpublish by removing the registry entry, or build login inside the app (OAuth, magic links, etc.). A future stack option is **HTTP Basic Auth** in the proxy (bcrypt hashes in config/registry, not plaintext passwords).
+
 ## Rules
 
 - Only publish static files from `sites/` in Chloe's workspace.

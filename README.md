@@ -307,6 +307,16 @@ sites/
 - Published trees must not contain symlinks.
 - Chloe should only write the registry and site files under `workspace/sites/`; she should not write raw proxy config.
 
+### Public access and passwords
+
+Published URLs are **world-readable** by default: anyone who knows `https://<subdomain>.<your-base-domain>` can load the static files. That is appropriate for marketing pages, demos, and shareable tools.
+
+To limit who can view a site:
+
+1. **Leave sites publishing disabled** in setup until you are ready to go public, or remove the entry from `sites/sites.json` to take a site down without disabling the whole feature.
+2. **App-level auth** — For SPAs and mini-apps, add your own sign-in (OAuth, magic links, etc.) in the front end or a small backend you deploy separately. The stack only serves static files from `sites/`.
+3. **HTTP Basic Auth (not wired yet)** — A natural next step is optional Caddy `basicauth` for either one shared login for all published sites or per-site credentials in the registry, storing **bcrypt hashes** only (no plaintext passwords on disk). Ask in the repo if you need this implemented.
+
 ## Troubleshooting
 
 **`./openclaw-guard devices list` (or worker) shows "device token mismatch":**
