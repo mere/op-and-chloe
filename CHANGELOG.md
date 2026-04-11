@@ -9,7 +9,7 @@ The format is based on [Common Changelog](https://common-changelog.org).
 ### Added
 
 - **`scripts/sites/hash_site_password.py`:** Chloe can generate bcrypt hashes for `sites.json` `basicauth` inside the worker with Python (stdin or argv); no Docker or Caddy on the worker.
-- **Worker image:** `python3-bcrypt` (Debian package) so the hash script runs in `openclaw-worker-tools`.
+- **Worker image (`openclaw-worker-tools`):** `ffmpeg`, `jq`, `python3-pip`, and `python3-bcrypt` (Debian packages) alongside existing base tooling.
 
 ### Changed
 
