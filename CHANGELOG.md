@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.9] - 2026-04-25
+
+### Fixed
+
+- **Docker Compose (guard/worker):** Set `build.pull: true` so `docker compose build` refreshes the OpenClaw base image (`ghcr.io/openclaw/openclaw:main` or `OPENCLAW_IMAGE`) before building `openclaw-guard-tools:local` and `openclaw-worker-tools:local`. Without this, `./restart` / `start.sh` could keep using a **stale** locally cached `:main` and appear to “install” an old OpenClaw version.
+
+### Changed
+
+- **README:** Troubleshooting for OpenClaw version not updating after pull/restart; note that `pull: true` only fetches new layers when the tag moved.
+
+[0.8.9]: https://github.com/mere/op-and-chloe/compare/v0.8.8...v0.8.9
+
 ## [0.8.8] - 2026-04-11
 
 ### Fixed

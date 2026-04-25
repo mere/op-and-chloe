@@ -55,6 +55,8 @@ services:
     image: ${OPENCLAW_WORKER_IMAGE:-openclaw-worker-tools:local}
     build:
       context: .
+      # Always refresh the base image tag (e.g. :main) so restarts do not keep a stale local copy
+      pull: true
       dockerfile: docker/openclaw-worker-tools.Dockerfile
       args:
         OPENCLAW_BASE_IMAGE: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:main}
@@ -80,6 +82,7 @@ services:
     image: ${OPENCLAW_GUARD_IMAGE:-openclaw-guard-tools:local}
     build:
       context: .
+      pull: true
       dockerfile: docker/openclaw-guard-tools.Dockerfile
       args:
         OPENCLAW_BASE_IMAGE: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:main}

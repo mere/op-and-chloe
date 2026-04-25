@@ -323,6 +323,9 @@ To limit who can view a site:
 **`./openclaw-guard devices list` (or worker) shows "device token mismatch":**
 - The container was started with an old gateway token. Recreate so they pick up the current env file: `sudo ./stop.sh && sudo ./start.sh` (wait ~90s for gateways to be ready, then try again).
 
+**OpenClaw version looks stuck after `git pull` and `./restart`:**
+- The guard and worker images are **built** from the published OpenClaw base image (default `ghcr.io/openclaw/openclaw:main`, or `OPENCLAW_IMAGE` in `/etc/openclaw/stack.env`). The Compose file sets **`build.pull: true`**, so each `start.sh` build **checks the registry** for that tag; Docker only downloads layers that actually changed, not the full image every time. If the version still looks wrong, ensure `OPENCLAW_IMAGE` is not pinning an old tag, or set it to a specific tag or digest you want (see `config/env.example`).
+
 **Dashboard URLs (Guard/Worker) return HTTP 502 after `stop.sh` / `start.sh`:**
 - The gateways can take 60–90 seconds to start listening. `start.sh` now waits for them before applying Tailscale serve. If you still see 502, wait a minute and refresh, or re-run: `sudo ./scripts/host/apply-tailscale-serve.sh`
 
