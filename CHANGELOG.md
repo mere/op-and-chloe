@@ -4,11 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.14] - 2026-04-25
+
+### Changed
+
+- **Setup wizard:** Step **21** (check for OpenClaw updates) no longer shows a status column chip (e.g. “check when selected…”) on the main menu; the right column is empty, like steps 18–20.
+
+[0.8.14]: https://github.com/mere/op-and-chloe/compare/v0.8.13...v0.8.14
+
 ## [0.8.13] - 2026-04-25
 
 ### Changed
 
-- **Setup wizard:** OpenClaw version / `update status` runs **only** in step **21** (renamed **check for OpenClaw updates**), not while painting the main menu, so **“Checking status…”** no longer blocks on network/CLI. Main menu line 21 shows a short hint; the real check happens on demand.
+- **Setup wizard:** OpenClaw version / `update status` runs **only** in step **21** (renamed **check for OpenClaw updates**), not while painting the main menu, so **“Checking status…”** no longer blocks on network/CLI. The real check runs when you open that step.
 
 [0.8.13]: https://github.com/mere/op-and-chloe/compare/v0.8.12...v0.8.13
 

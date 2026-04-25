@@ -174,13 +174,7 @@ step_status(){
     18) echo "" ;;
     19) echo "" ;;
     20) echo "" ;;
-    21)
-      if container_running "$worker_name"; then
-        echo "⚪ check when selected (no auto-check)"
-      else
-        echo "⚪ Start worker (step 9) first"
-      fi
-      ;;
+    21) echo "" ;;
     *) echo "—" ;;
   esac
 }
