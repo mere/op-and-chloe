@@ -69,13 +69,25 @@ It takes about 20 minutes to follow the steps and your `AI personal assistant` i
 
 ## How to update
 
-To update your op-and-chloe stack: run `git pull`, then run the setup again. The wizard will show you if anything needs updating.
+### This repo (wizard, compose, scripts)
+
+Run `git pull` in your clone, then re-run the wizard so you see anything new. It will show you if a step or setting needs attention.
 
 ```bash
 cd op-and-chloe   # or wherever you cloned the repo
 git pull
 sudo ./setup.sh
 ```
+
+To apply compose changes and rebuild containers (typical after a pull), restart the stack: `sudo ./start.sh` or `sudo ./restart.sh`.
+
+### OpenClaw (upstream) version
+
+The guard and worker **Dockerfile** layers sit on the published **OpenClaw** image. By default that is `ghcr.io/openclaw/openclaw:main` — a **floating** tag for upstream’s `main` branch, not a fixed semver. On each `start.sh` or `restart.sh` run, `start.sh` **explicitly** `docker pull`s that ref (and still runs `docker compose build --pull`) so the local engine’s copy of the tag is updated before BuildKit may **only fetch changed layers**; you are not re-downloading the full image every time when nothing on the registry changed.
+
+The string from `./openclaw-worker --version` (e.g. `OpenClaw 2026.3.25`) is whatever **upstream put inside** the image at `main` today. If you expected a newer number, the registry image may not have been rebuilt yet—check OpenClaw’s releases or image tags on GHCR, or wait for a new `main` build.
+
+To **pin** a specific OpenClaw release (or a digest) instead of following `main`, set **`OPENCLAW_IMAGE`** in `/etc/openclaw/stack.env` (see the commented line in `config/env.example`, e.g. `ghcr.io/openclaw/openclaw:some-tag` or `…@sha256:…`), then run `sudo ./start.sh` so the local images are rebuilt from that base.
 
 # Components
 
@@ -323,8 +335,8 @@ To limit who can view a site:
 **`./openclaw-guard devices list` (or worker) shows "device token mismatch":**
 - The container was started with an old gateway token. Recreate so they pick up the current env file: `sudo ./stop.sh && sudo ./start.sh` (wait ~90s for gateways to be ready, then try again).
 
-**OpenClaw version looks stuck after `git pull` and `./restart`:**
-- The guard and worker images are **built** from the published OpenClaw base image (default `ghcr.io/openclaw/openclaw:main`, or `OPENCLAW_IMAGE` in `/etc/openclaw/stack.env`). The Compose file sets **`build.pull: true`**, so each `start.sh` build **checks the registry** for that tag; Docker only downloads layers that actually changed, not the full image every time. If the version still looks wrong, ensure `OPENCLAW_IMAGE` is not pinning an old tag, or set it to a specific tag or digest you want (see `config/env.example`).
+**OpenClaw version looks stuck after `git pull` and `./restart.sh`:**
+- The guard and worker images are **built** from the published OpenClaw base image (default `ghcr.io/openclaw/openclaw:main`, or `OPENCLAW_IMAGE` in `/etc/openclaw/stack.env`). `start.sh` **pulls** that ref before building. If `--version` still shows an old calendar string, the **image on GHCR** for that tag may still be that build—check upstream. To force-refresh: `docker pull ghcr.io/openclaw/openclaw:main` then `sudo ./start.sh`. Ensure `OPENCLAW_IMAGE` is not pinning an old tag or digest (see `config/env.example`).
 
 **Dashboard URLs (Guard/Worker) return HTTP 502 after `stop.sh` / `start.sh`:**
 - The gateways can take 60–90 seconds to start listening. `start.sh` now waits for them before applying Tailscale serve. If you still see 502, wait a minute and refresh, or re-run: `sudo ./scripts/host/apply-tailscale-serve.sh`

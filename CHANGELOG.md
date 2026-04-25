@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.10] - 2026-04-25
+
+### Fixed
+
+- **`start.sh`:** Run `docker pull` on the OpenClaw base image (`OPENCLAW_IMAGE` or `ghcr.io/openclaw/openclaw:main`) before `docker compose build`, and add `docker compose build --pull`. This avoids BuildKit reusing a **cached digest** for the `:main` tag so restarts can keep an older image even with `build.pull: true` in `compose.yml`.
+
+### Changed
+
+- **README (How to update / troubleshooting):** Clarify that the reported `OpenClaw YYYY.M.D` string matches what is **inside** the current GHCR image, not necessarily the latest source commit.
+
+[0.8.10]: https://github.com/mere/op-and-chloe/compare/v0.8.9...v0.8.10
+
 ## [0.8.9] - 2026-04-25
 
 ### Fixed

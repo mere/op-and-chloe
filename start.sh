@@ -32,8 +32,14 @@ mkdir -p \
 echo "[start] syncing core instructions into workspaces"
 bash "$STACK_DIR/scripts/host/sync-workspaces.sh"
 
+# Resolve the same ref compose uses, then `docker pull` it explicitly. BuildKit can otherwise
+# keep using a previous digest for :main in cache even with compose `build.pull: true`.
+OPENCLAW_BASE="${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:main}"
+echo "[start] pulling OpenClaw base image: ${OPENCLAW_BASE}"
+docker pull "$OPENCLAW_BASE"
+
 echo "[start] building guard and worker images (openclaw-guard-tools:local, openclaw-worker-tools:local)"
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build openclaw-guard openclaw-gateway
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build --pull openclaw-guard openclaw-gateway
 
 echo "[start] pulling images (browser)"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull browser
