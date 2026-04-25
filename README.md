@@ -89,7 +89,7 @@ The string from `./openclaw-worker --version` (e.g. `OpenClaw 2026.3.25`) is wha
 
 To **pin** a specific OpenClaw release (or a digest) instead of following `main`, set **`OPENCLAW_IMAGE`** in `/etc/openclaw/stack.env` (see the commented line in `config/env.example`, e.g. `ghcr.io/openclaw/openclaw:some-tag` or `…@sha256:…`), then run `sudo ./start.sh` so the local images are rebuilt from that base.
 
-In **`sudo ./setup.sh`**, menu step **21 — update openclaw** shows the **running** version (`./openclaw-worker --version`) and the **remote availability** from `openclaw update status` (with a short timeout), and can run **`./openclaw-worker update`** in the worker container. For a **new Docker base** from ghcr, still use **step 20 (restart all services)** (or `sudo ./restart.sh`) so the local images are rebuilt.
+In **`sudo ./setup.sh`**, menu step **21 — check for OpenClaw updates** does **not** run when the main menu loads (so the wizard stays fast). When you pick that step, it checks the **running** version (`./openclaw-worker --version`) and **remote availability** from `openclaw update status` (bounded wait), and can run **`./openclaw-worker update`**. For a **new Docker base** from ghcr, use **step 20 (restart all services)** or `sudo ./restart.sh`.
 
 # Components
 

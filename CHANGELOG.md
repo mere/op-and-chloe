@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.13] - 2026-04-25
+
+### Changed
+
+- **Setup wizard:** OpenClaw version / `update status` runs **only** in step **21** (renamed **check for OpenClaw updates**), not while painting the main menu, so **“Checking status…”** no longer blocks on network/CLI. Main menu line 21 shows a short hint; the real check happens on demand.
+
+[0.8.13]: https://github.com/mere/op-and-chloe/compare/v0.8.12...v0.8.13
+
+## [0.8.12] - 2026-04-25
+
+### Added
+
+- **`scripts/host/openclaw_docker_exec.py`:** Run `./openclaw.mjs` in the worker container via `subprocess.run(..., timeout=…)` so there is always a hard cap even when GNU `timeout` is not installed.
+
+### Fixed
+
+- **Setup wizard / menu:** `refresh_openclaw_version_cache` no longer used unbounded `docker exec` when `timeout(1)` was missing; **OpenClaw update status** could hang indefinitely. Worker OpenClaw calls in that path use `openclaw_docker_exec.py` with **5s** (`--version`) and **8s** (`update status`) per attempt.
+
+[0.8.12]: https://github.com/mere/op-and-chloe/compare/v0.8.11...v0.8.12
+
 ## [0.8.11] - 2026-04-25
 
 ### Added
