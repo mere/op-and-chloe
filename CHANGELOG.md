@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.11] - 2026-04-25
+
+### Added
+
+- **Setup wizard:** Menu step **21 — update openclaw** shows running OpenClaw (`./openclaw-worker --version`) vs **latest** from `openclaw update status` (JSON or text, 15s timeout) and can run **`./openclaw-worker update`**. Status line examples: `Update available: v… (running v…)` or `Up to date: v…`.
+- **`scripts/host/parse_openclaw_update_status.py`:** Parse `openclaw update status` for version numbers (compatible with older Python, no 3.10-only syntax).
+
+### Changed
+
+- **README (How to update):** Document wizard step 21 and how it relates to `restart` / ghcr.
+- **Setup wizard (help, step 19):** List `./openclaw-worker --version` and `./openclaw-worker update`.
+
+[0.8.11]: https://github.com/mere/op-and-chloe/compare/v0.8.10...v0.8.11
+
 ## [0.8.10] - 2026-04-25
 
 ### Fixed

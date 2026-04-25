@@ -79,6 +79,50 @@ resolve_container_name(){
   docker ps --format '{{.Names}}' 2>/dev/null | grep -E "^${logical}$|_${logical}$" | head -1
 }
 
+# Filled in menu_once before drawing item 21 (Update openclaw)
+OPENCLAW_MENU_RUN=""
+OPENCLAW_MENU_LATEST=""
+OPENCLAW_MENU_NEED=0
+OPENCLAW_MENU_STATUS_ERR=0
+
+refresh_openclaw_version_cache(){
+  OPENCLAW_MENU_RUN=""
+  OPENCLAW_MENU_LATEST=""
+  OPENCLAW_MENU_NEED=0
+  OPENCLAW_MENU_STATUS_ERR=0
+  local w out st line
+  w=$(resolve_container_name "$worker_name") || { OPENCLAW_MENU_STATUS_ERR=1; return 0; }
+  out=$(docker exec -i "$w" ./openclaw.mjs --version 2>/dev/null) || { OPENCLAW_MENU_STATUS_ERR=1; return 0; }
+  OPENCLAW_MENU_RUN=$(echo "$out" | sed -n 's/.*OpenClaw[[:space:]]*\([0-9.]*\).*/\1/p' | head -1)
+  [ -n "$OPENCLAW_MENU_RUN" ] || { OPENCLAW_MENU_STATUS_ERR=1; return 0; }
+  st=""
+  if command -v timeout >/dev/null 2>&1; then
+    st=$(timeout 15 docker exec -i "$w" ./openclaw.mjs update status --json 2>/dev/null || true)
+  else
+    st=$(docker exec -i "$w" ./openclaw.mjs update status --json 2>/dev/null || true)
+  fi
+  # If --json is empty or not JSON, fall back to human-readable status
+  if [ -z "$st" ] || [ "${st#\{}" = "$st" ]; then
+    if command -v timeout >/dev/null 2>&1; then
+      st=$(timeout 15 docker exec -i "$w" ./openclaw.mjs update status 2>/dev/null || true)
+    else
+      st=$(docker exec -i "$w" ./openclaw.mjs update status 2>/dev/null || true)
+    fi
+  fi
+  if [ -z "$st" ]; then
+    OPENCLAW_MENU_LATEST="$OPENCLAW_MENU_RUN"
+    OPENCLAW_MENU_STATUS_ERR=1
+    return 0
+  fi
+  line=$(printf '%s' "$st" | python3 "$STACK_DIR/scripts/host/parse_openclaw_update_status.py" "$OPENCLAW_MENU_RUN")
+  OPENCLAW_MENU_LATEST=$(echo "$line" | cut -f1)
+  OPENCLAW_MENU_NEED=$(echo "$line" | cut -f2)
+  case "$OPENCLAW_MENU_NEED" in
+    0|1) ;;
+    *) OPENCLAW_MENU_NEED=0 ;;
+  esac
+}
+
 # Status for 2-column menu display
 step_status(){
   case "$1" in
@@ -136,6 +180,21 @@ step_status(){
     18) echo "" ;;
     19) echo "" ;;
     20) echo "" ;;
+    21)
+      if [ -z "$OPENCLAW_MENU_RUN" ]; then
+        if container_running "$worker_name"; then
+          echo "⚪ OpenClaw version unknown"
+        else
+          echo "⚪ Worker not running"
+        fi
+      elif [ "$OPENCLAW_MENU_NEED" = "1" ] && [ -n "$OPENCLAW_MENU_LATEST" ]; then
+        echo "⚪ Update available: v${OPENCLAW_MENU_LATEST} (running v${OPENCLAW_MENU_RUN})"
+      elif [ "${OPENCLAW_MENU_STATUS_ERR:-0}" = "1" ]; then
+        echo "✅ v${OPENCLAW_MENU_RUN} (update check unavailable)"
+      else
+        echo "✅ Up to date: v${OPENCLAW_MENU_RUN}"
+      fi
+      ;;
     *) echo "—" ;;
   esac
 }
@@ -1237,6 +1296,35 @@ step_restart_all(){
   ok "Restart finished"
 }
 
+step_openclaw_update(){
+  say "Update OpenClaw (worker / Chloe)"
+  local w
+  w=$(resolve_container_name "$worker_name")
+  if [ -z "$w" ]; then
+    warn "Start the worker (menu step 9) first, then return here."
+    return
+  fi
+  refresh_openclaw_version_cache
+  echo
+  echo "  Running (./openclaw-worker --version):  $( [ -n "$OPENCLAW_MENU_RUN" ] && echo "v$OPENCLAW_MENU_RUN" || echo "—" )"
+  echo "  Latest (from openclaw update status):  $( [ -n "$OPENCLAW_MENU_LATEST" ] && echo "v$OPENCLAW_MENU_LATEST" || echo "—" )"
+  echo
+  echo "Next step:  ./openclaw-worker update  (in-container update)"
+  echo "To refresh the Docker image from ghcr, use menu step 20 (restart) or: sudo $STACK_DIR/restart.sh"
+  echo
+  read -r -p "$TIGER Run ./openclaw-worker update now? [y/N]: " go
+  case "$go" in
+    y|Y|yes|YES)
+      if ( cd "$STACK_DIR" && ./openclaw-worker update ); then
+        ok "Done. If you use the published ghcr image, also restart to rebuild: sudo $STACK_DIR/restart.sh"
+      else
+        warn "openclaw update returned non-zero"
+      fi
+      ;;
+    *) say "Skipped. No changes made." ;;
+  esac
+}
+
 step_daily_backups(){
   local pick new_dir new_retention
   say "Daily backups"
@@ -1850,6 +1938,8 @@ step_help_useful_commands(){
   echo "Run OpenClaw CLI:"
   echo "  ./openclaw-guard"
   echo "  ./openclaw-worker"
+  echo "  ./openclaw-worker --version"
+  echo "  ./openclaw-worker update          # in-container updater (or menu step 21)"
   echo
   echo "Daily backups:"
   echo "  sudo ./scripts/host/daily-backup.sh --force"
@@ -1885,6 +1975,7 @@ run_step(){
     18) step_verify ;;
     19) step_help_useful_commands ;;
     20) step_restart_all ;;
+    21) step_openclaw_update ;;
     *) warn "Unknown step" ;;
   esac
   fix_repo_ownership
@@ -1914,6 +2005,7 @@ print_menu_step(){
 menu_once(){
   welcome
   printf "$TIGER Checking status..."
+  refresh_openclaw_version_cache
   echo
   echo
   echo "Follow these steps one by one:"
@@ -1938,6 +2030,7 @@ menu_once(){
   print_menu_step 18 "healthcheck"
   print_menu_step 19 "help / useful cmds"
   print_menu_step 20 "restart all services"
+  print_menu_step 21 "update openclaw"
   echo
   if check_done tailscale; then
     menu_tsdns=$(tailscale_dns)
@@ -1949,10 +2042,10 @@ menu_once(){
       echo
     fi
   fi
-  read -r -p "$TIGER Select step [1-20] or 0 to exit: " pick
+  read -r -p "$TIGER Select step [1-21] or 0 to exit: " pick
   case "$pick" in
     0) say "Exiting setup wizard. See you soon."; return 1 ;;
-    1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20) run_step "$pick" ;;
+    1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21) run_step "$pick" ;;
     *) warn "Invalid choice" ;;
   esac
   return 0
