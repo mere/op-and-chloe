@@ -1284,10 +1284,8 @@ step_openclaw_update(){
     warn "Start the worker (menu step 9) first, then return here."
     return
   fi
-  echo
   say "Checking version and update channel (up to a few seconds)…"
   refresh_openclaw_version_cache
-  echo
   if [ -n "$OPENCLAW_MENU_NEED" ] && [ "$OPENCLAW_MENU_NEED" = "1" ] && [ -n "$OPENCLAW_MENU_LATEST" ] && [ -n "$OPENCLAW_MENU_RUN" ]; then
     say "Update available: v${OPENCLAW_MENU_LATEST} (running v${OPENCLAW_MENU_RUN})"
   elif [ -n "$OPENCLAW_MENU_RUN" ] && [ "${OPENCLAW_MENU_STATUS_ERR:-0}" != "1" ]; then
@@ -1295,13 +1293,10 @@ step_openclaw_update(){
   elif [ -n "$OPENCLAW_MENU_RUN" ]; then
     say "Running: v${OPENCLAW_MENU_RUN} (remote check unavailable; try again later)"
   fi
-  echo
   echo "  Running:  $( [ -n "$OPENCLAW_MENU_RUN" ] && echo "v$OPENCLAW_MENU_RUN" || echo "—" )  (from ./openclaw-worker --version)"
   echo "  Latest:   $( [ -n "$OPENCLAW_MENU_LATEST" ] && echo "v$OPENCLAW_MENU_LATEST" || echo "—" )  (from openclaw update status)"
-  echo
   say "In-container update:  ./openclaw-worker update"
   echo "New Docker image from ghcr:  menu step 20  or:  sudo $STACK_DIR/restart.sh"
-  echo
   read -r -p "$TIGER Run ./openclaw-worker update now? [y/N]: " go
   case "$go" in
     y|Y|yes|YES)

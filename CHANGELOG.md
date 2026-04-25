@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Common Changelog](https://common-changelog.org).
 
+## [0.8.15] - 2026-04-25
+
+### Changed
+
+- **Setup wizard (step 21 — check for OpenClaw updates):** Tighter output — drop extra blank `echo` lines so version/status narrative prints without large gaps.
+
+[0.8.15]: https://github.com/mere/op-and-chloe/compare/v0.8.14...v0.8.15
+
 ## [0.8.14] - 2026-04-25
 
 ### Changed
